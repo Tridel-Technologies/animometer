@@ -1,0 +1,171 @@
+<div class="flex flex-col gap-5 flex-1 min-h-0">
+    <!-- Advanced Filters & Visibility -->
+    <div
+        class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex flex-col gap-4">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="flex flex-col gap-1">
+                    <label class="text-sm font-black text-slate-400 uppercase tracking-widest ml-1">Time
+                        Scale</label>
+                    <div
+                        class="flex bg-slate-50 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
+                        <button (click)="setTimeScale('Day')"
+                            class="px-5 py-2 rounded-lg text-sm font-bold transition-all"
+                            [class.bg-white]="selectedTimeScale === 'Day'"
+                            [class.dark:bg-slate-800]="selectedTimeScale === 'Day'"
+                            [class.shadow-sm]="selectedTimeScale === 'Day'"
+                            [class.text-blue-600]="selectedTimeScale === 'Day'"
+                            [class.text-slate-500]="selectedTimeScale !== 'Day'"
+                            [class.hover:text-slate-700]="selectedTimeScale !== 'Day'"
+                            [class.dark:hover:text-slate-300]="selectedTimeScale !== 'Day'">Day</button>
+                        <button (click)="setTimeScale('Week')"
+                            class="px-5 py-2 rounded-lg text-sm font-bold transition-all"
+                            [class.bg-white]="selectedTimeScale === 'Week'"
+                            [class.dark:bg-slate-800]="selectedTimeScale === 'Week'"
+                            [class.shadow-sm]="selectedTimeScale === 'Week'"
+                            [class.text-blue-600]="selectedTimeScale === 'Week'"
+                            [class.text-slate-500]="selectedTimeScale !== 'Week'"
+                            [class.hover:text-slate-700]="selectedTimeScale !== 'Week'"
+                            [class.dark:hover:text-slate-300]="selectedTimeScale !== 'Week'">Week</button>
+                        <button (click)="setTimeScale('Month')"
+                            class="px-5 py-2 rounded-lg text-sm font-bold transition-all"
+                            [class.bg-white]="selectedTimeScale === 'Month'"
+                            [class.dark:bg-slate-800]="selectedTimeScale === 'Month'"
+                            [class.shadow-sm]="selectedTimeScale === 'Month'"
+                            [class.text-blue-600]="selectedTimeScale === 'Month'"
+                            [class.text-slate-500]="selectedTimeScale !== 'Month'"
+                            [class.hover:text-slate-700]="selectedTimeScale !== 'Month'"
+                            [class.dark:hover:text-slate-300]="selectedTimeScale !== 'Month'">Month</button>
+                        <button (click)="setTimeScale('Year')"
+                            class="px-5 py-2 rounded-lg text-sm font-bold transition-all"
+                            [class.bg-white]="selectedTimeScale === 'Year'"
+                            [class.dark:bg-slate-800]="selectedTimeScale === 'Year'"
+                            [class.shadow-sm]="selectedTimeScale === 'Year'"
+                            [class.text-blue-600]="selectedTimeScale === 'Year'"
+                            [class.text-slate-500]="selectedTimeScale !== 'Year'"
+                            [class.hover:text-slate-700]="selectedTimeScale !== 'Year'"
+                            [class.dark:hover:text-slate-300]="selectedTimeScale !== 'Year'">Year</button>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-sm font-black text-slate-400 uppercase tracking-widest ml-1">Date
+                        Range</label>
+                    <input type="date"
+                        class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <button (click)="exportExcel()"
+                    class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 transition-colors shadow-sm"
+                    title="Export Excel">
+                    <i class="fa-solid fa-file-excel text-green-600 text-lg"></i>
+                </button>
+                <button (click)="exportPDF()"
+                    class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 transition-colors shadow-sm"
+                    title="Export PDF">
+                    <i class="fa-solid fa-file-pdf text-red-500 text-lg"></i>
+                </button>
+                <button (click)="exportCSV()"
+                    class="flex items-center gap-3 px-6 py-3 rounded-xl bg-blue-600 text-white text-sm font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20">
+                    <i class="fa-solid fa-download"></i>
+                    <span>Export CSV</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Parameter Toggles (Instantly show/hide) -->
+        <div class="pt-4 border-t border-slate-100 dark:border-slate-800">
+            <span class="text-sm font-black text-slate-400 uppercase tracking-widest block mb-4">Visible
+                Parameters</span>
+            <div class="flex flex-wrap gap-3">
+                <button *ngFor="let col of reportColumns" (click)="toggleColumn(col.key)"
+                    class="px-4 py-2 rounded-lg text-sm font-bold border transition-all flex items-center gap-2"
+                    [ngClass]="col.visible
+                    ? 'bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400'
+                    : 'bg-white border-slate-200 text-slate-400 dark:bg-slate-900 dark:border-slate-800 opacity-60'">
+                    <i class="fa-solid" [ngClass]="col.visible ? 'fa-check-circle' : 'fa-circle-xmark'"></i>
+                    {{ col.label }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attractive Table -->
+    <div
+        class="flex-1 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col min-h-0 max-h-[calc(100vh-350px)]">
+        <div class="flex-1 overflow-y-auto overflow-x-auto">
+            <table class="w-full  text-left border-collapse">
+                <thead class="bg-slate-50 dark:bg-slate-950 sticky top-0 z-20">
+                    <tr>
+                        <th class="p-5 text-sm font-black text-slate-400 uppercase tracking-widest">
+                            Timestamp</th>
+                        <ng-container *ngFor="let col of reportColumns">
+                            <th *ngIf="col.visible"
+                                class="p-5 text-sm font-black text-slate-400 uppercase tracking-widest">
+                                {{ col.label }}
+                            </th>
+                        </ng-container>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                    <tr *ngFor="let row of paginatedData"
+                        class="group hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-colors">
+                        <td class="p-5 text-sm font-black font-mono text-slate-600 dark:text-slate-400">
+                            {{ row.date }} 14:35</td>
+                        <ng-container *ngFor="let col of reportColumns">
+                            <td *ngIf="col.visible" class="p-5">
+                                <span class="text-base font-bold text-slate-900 dark:text-white">{{
+                                    row[col.key] }}</span>
+                            </td>
+                        </ng-container>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div
+            class="border-t border-slate-200 dark:border-slate-800 p-6 flex items-center justify-between flex-shrink-0 bg-white dark:bg-slate-900 gap-4 overflow-x-auto">
+            <!-- Items Per Page Selector -->
+            <div class="flex items-center gap-3">
+                <label class="text-sm font-bold text-slate-600 dark:text-slate-400">Items per page:</label>
+                <div class="flex gap-2">
+                    <button *ngFor="let option of itemsPerPageOptions" (click)="setItemsPerPage(option)"
+                        class="px-4 py-2 rounded-lg text-sm font-bold transition-all border"
+                        [ngClass]="itemsPerPage === option
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/30'
+                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-blue-400'">
+                        {{ option }}
+                    </button>
+                </div>
+            </div>
+
+            <!-- Page Info -->
+            <div class="text-sm font-bold text-slate-600 dark:text-slate-400">
+                Page {{ currentPage }} of {{ totalPages }} | Total: {{ reportData.length }} records
+            </div>
+
+            <!-- Pagination Buttons -->
+            <div class="flex items-center gap-2">
+                <button (click)="prevPage()" [disabled]="currentPage === 1"
+                    class="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+
+                <div class="flex gap-1">
+                    <button *ngFor="let page of pageNumbers" (click)="goToPage(page)"
+                        class="px-3 py-2 rounded-lg text-sm font-bold transition-all border"
+                        [ngClass]="currentPage === page
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-blue-400'">
+                        {{ page }}
+                    </button>
+                </div>
+
+                <button (click)="nextPage()" [disabled]="currentPage === totalPages"
+                    class="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>

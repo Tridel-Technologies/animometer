@@ -1,0 +1,92 @@
+<div class="flex-1 flex gap-6 min-h-0">
+    <!-- Left Side: Charts Section -->
+    <div class="flex-1 flex gap-6 min-h-0" #leftChartContainer>
+        <!-- Left Charts Column -->
+        <div class="w-1/1 flex flex-col gap-6">
+            <!-- Top Chart: Wind Speed Analysis -->
+            <div
+                class="h-[50%] w-[100%] rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex flex-col">
+                <h3 class="text-xl font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-6">
+                    Wind Speed Analysis</h3>
+                <div class="h-[90%] w-[100%]" #chartContainer>
+                    <app-wind-chart [windData]="windData" [height]="chartHeight" [width]="chartWidth" cast="day">
+                    </app-wind-chart>
+                </div>
+            </div>
+
+            <!-- Bottom Chart: Temperature Trend -->
+            <div
+                class="h-[50%] w-[100%] rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex flex-col">
+                <h3 class="text-xl font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-6">
+                    Temperature Trend</h3>
+                <div class="flex-1">
+                    <app-wind-chart [windData]="windData" [height]="chartHeight" [width]="chartWidth" cast="day">
+                    </app-wind-chart>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Chart: Polar Chart -->
+        <div class="w-1/2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex flex-col"
+            #polarChartContainer>
+            <h3 class="text-xl font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-6">
+                Wind Rose</h3>
+            <div class="flex-1">
+                <app-polar-chart [polarAxis]="polarData" [id]="'wind-rose'" [height]="400" [width]="500">
+                </app-polar-chart>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Side: Filter Section -->
+    <div class="w-80 flex flex-col gap-6">
+        <!-- Time Scale Filter -->
+        <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+            <h3 class="text-lg font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">
+                Time Scale</h3>
+            <div
+                class="flex bg-slate-50 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
+                <button *ngFor="let scale of timeScales" (click)="onTimeScaleChange(scale.value)"
+                    class="flex-1 px-4 py-2 rounded-lg text-sm font-bold transition-all" [ngClass]="selectedTimeScale === scale.value
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'">
+                    {{ scale.label }}
+                </button>
+            </div>
+        </div>
+
+        <!-- Date Picker -->
+        <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+            <h3 class="text-lg font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">
+                Date Selection</h3>
+            <input type="date" [value]="selectedDate" (change)="onDateChange($event.target.value)"
+                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <!-- Station Selection -->
+        <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+            <h3 class="text-lg font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">
+                Station</h3>
+            <select [value]="selectedStation" (change)="onStationChange($event)"
+                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500">
+                <option *ngFor="let station of stations" [value]="station">{{ station }}</option>
+            </select>
+        </div>
+
+        <!-- Parameter Selection -->
+        <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+            <h3 class="text-lg font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">
+                Parameters</h3>
+            <div class="flex flex-col gap-3">
+                <button *ngFor="let param of parameters" (click)="toggleParameter(param)"
+                    class="flex items-center justify-between p-3 rounded-lg text-sm font-bold border transition-all"
+                    [ngClass]="param.selected
+                        ? 'bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400'
+                        : 'bg-slate-50 border-slate-200 text-slate-400 dark:bg-slate-950 dark:border-slate-800 opacity-60'">
+                    <span>{{ param.label }}</span>
+                    <i class="fa-solid" [ngClass]="param.selected ? 'fa-check-circle' : 'fa-circle-xmark'"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
