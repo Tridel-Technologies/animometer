@@ -78,7 +78,7 @@ export class Dashboard implements OnInit {
             color: color,
             width: 2,
             shadowColor: isDarkMode ? color : 'transparent',
-            shadowBlur: isDarkMode ? 5 : 0,
+            // shadowBlur: isDarkMode ? 5 : 0,
             shadowOffsetY: isDarkMode ? 0 : 0
           },
           areaStyle: {
