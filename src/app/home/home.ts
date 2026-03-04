@@ -22,6 +22,9 @@ interface AnemometerData {
   solar: number;
   lat: number;
   lon: number;
+  humidity?: number;
+  pressure?: number;
+  battery?: number;
 }
 
 interface NavItem {
@@ -78,9 +81,9 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
     this.loadLatestWindData(); // Load latest wind data from API
 
     // Simulate live data updates every 3 seconds
-    this.dataSubscription = interval(3000).subscribe(() => {
-      this.loadLatestWindData(); // Refresh data from API
-    });
+    // this.dataSubscription = interval(10000).subscribe(() => {
+    //   this.loadLatestWindData(); // Refresh data from API
+    // });
 
     // Update time every second
     this.timeSubscription = interval(1000).subscribe(() => {
@@ -118,7 +121,10 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
     temp: 24.3,
     solar: 856,
     lat: 13.0827,
-    lon: 80.2707
+    lon: 80.2707,
+    humidity: 65,
+    pressure: 1013.2,
+    battery: 92
   };
 
   // ...existing code...
@@ -193,7 +199,10 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
         temp: latestData.temp,
         solar: latestData.solar_rad,
         lat: latestData.lat,
-        lon: latestData.lon
+        lon: latestData.lon,
+        humidity: 65,
+        pressure: 1013.2,
+        battery: 92
       };
       this.cdr.markForCheck();
     }
@@ -208,7 +217,10 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
       temp: parseFloat((this.anemometerData.temp + (Math.random() - 0.5) * 0.3).toFixed(1)),
       solar: Math.floor(this.anemometerData.solar + (Math.random() - 0.5) * 50),
       lat: this.anemometerData.lat,
-      lon: this.anemometerData.lon
+      lon: this.anemometerData.lon,
+      humidity: parseFloat(((this.anemometerData.humidity || 65) + (Math.random() - 0.5) * 2).toFixed(1)),
+      pressure: parseFloat(((this.anemometerData.pressure || 1013.2) + (Math.random() - 0.5) * 1).toFixed(1)),
+      battery: this.anemometerData.battery || 92
     };
     this.cdr.markForCheck();
   }
@@ -300,14 +312,16 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
   // Widget data example
   get widgetData() {
     return [
-      { icon: 'fa-wind', label: 'Wind UV', val: this.anemometerData.uv, unit: 'm/s', pct: 75, barColor: 'from-cyan-400 to-blue-500' },
-      { icon: 'fa-wind', label: 'Wind UY', val: this.anemometerData.uy, unit: 'm/s', pct: 60, barColor: 'from-cyan-400 to-blue-500' },
-      { icon: 'fa-wind', label: 'Wind UZ', val: this.anemometerData.uz, unit: 'm/s', pct: 85, barColor: 'from-cyan-400 to-blue-500' },
-      { icon: 'fa-droplet', label: 'Rainfall', val: this.anemometerData.rain, unit: 'mm', pct: 0, barColor: 'from-blue-400 to-cyan-400' },
-      { icon: 'fa-temperature-half', label: 'Temp', val: this.anemometerData.temp, unit: '°C', pct: 65, barColor: 'from-orange-400 to-red-500' },
-      { icon: 'fa-sun', label: 'Solar Rad', val: this.anemometerData.solar, unit: 'W/m²', pct: 90, barColor: 'from-yellow-400 to-orange-500' },
-      { icon: 'fa-map-pin', label: 'Latitude', val: this.anemometerData.lat, unit: '°N', pct: 50, barColor: 'from-green-400 to-cyan-400' },
-      { icon: 'fa-map-pin', label: 'Longitude', val: this.anemometerData.lon, unit: '°E', pct: 45, barColor: 'from-green-400 to-cyan-400' },
+      { id: 'wind_ux', icon: 'fa-wind', label: 'Wind UX', val: this.anemometerData.uv, unit: 'm/s', pct: 75, barColor: 'from-cyan-400 to-blue-500', trend: [1.3, 1.4, 1.2, 1.6, 2.0, 1.8, 1.5, 1.4, 1.3, 1.2] },
+      { id: 'wind_uy', icon: 'fa-wind', label: 'Wind UY', val: this.anemometerData.uy, unit: 'm/s', pct: 60, barColor: 'from-cyan-400 to-blue-500', trend: [6.8, 7.0, 7.2, 7.5, 8.0, 7.8, 7.5, 7.4, 7.4, 7.3] },
+      { id: 'wind_uz', icon: 'fa-wind', label: 'Wind UZ', val: this.anemometerData.uz, unit: 'm/s', pct: 85, barColor: 'from-cyan-400 to-blue-500', trend: [3.8, 4.0, 4.1, 4.2, 4.6, 4.8, 4.5, 4.4, 4.3, 4.3] },
+      { id: 'humidity', icon: 'fa-droplet', label: 'Humidity', val: this.anemometerData.humidity, unit: '%', pct: 65, barColor: 'from-blue-400 to-cyan-400', trend: [60, 61, 62, 63, 64, 66, 67, 66, 65, 65] },
+      { id: 'pressure', icon: 'fa-gauge-high', label: 'Pressure', val: this.anemometerData.pressure, unit: 'hPa', pct: 80, barColor: 'from-indigo-400 to-blue-500', trend: [1011, 1012, 1012, 1013, 1014, 1014, 1013, 1013, 1014, 1013.2] },
+      { id: 'solar', icon: 'fa-sun', label: 'Solar Rad', val: this.anemometerData.solar, unit: 'W/m²', pct: 90, barColor: 'from-yellow-400 to-orange-500', trend: [5.0, 8.0, 10.5, 12.0, 15.0, 16.5, 18.0, 16.0, 14.0, 14.5] },
+      { id: 'temp', icon: 'fa-temperature-half', label: 'Temp', val: this.anemometerData.temp, unit: '°C', pct: 65, barColor: 'from-orange-400 to-red-500', trend: [22.5, 22.8, 23.0, 23.3, 23.5, 23.8, 24.1, 24.0, 24.1, 24.1] },
+      { id: 'rain', icon: 'fa-cloud-rain', label: 'Rainfall', val: this.anemometerData.rain, unit: 'mm', pct: 0, barColor: 'from-blue-400 to-cyan-400', trend: [30, 35, 40, 50, 45, 40, 38, 42, 45, 43.1] },
+      { id: 'gps', icon: 'fa-location-dot', label: 'GPS Position', val: this.anemometerData.lat, lat: this.anemometerData.lat, lon: this.anemometerData.lon, unit: '', pct: 100, barColor: 'from-green-400 to-cyan-400', trend: [] },
+      { id: 'battery', icon: 'fa-battery-full', label: 'Battery', val: this.anemometerData.battery, unit: '%', pct: 92, barColor: 'from-emerald-400 to-green-500', trend: [100, 99, 98, 97, 96, 95, 94, 93, 92, 92] },
     ];
   }
 }

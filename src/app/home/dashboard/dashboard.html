@@ -1,218 +1,239 @@
 <div
-    class="h-screen w-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-slate-800 dark:to-gray-900 p-4 overflow-hidden">
-    <div class="h-full flex gap-4">
-        <!-- Left: Parameters Side View (50%) -->
-        <div class="w-[50%] flex flex-col gap-3 min-h-0">
-            <!-- All Parameters Section -->
-            <div
-                class="flex-1 rounded-2xl bg-white/80 dark:bg-gradient-to-br dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-sm border border-blue-200 dark:border-cyan-500/20 shadow-xl shadow-blue-100/50 dark:shadow-cyan-500/10 p-6">
-                <div class="flex items-center justify-between mb-5">
-                    <h2
-                        class="text-xl font-bold text-blue-700 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-cyan-400 dark:to-blue-500 uppercase tracking-wider">
-                        All Parameters
-                    </h2>
-                    <div
-                        class="flex items-center gap-2 bg-green-100 dark:bg-cyan-500/10 px-4 py-2 rounded-full border border-green-300 dark:border-cyan-400/30">
-                        <div
-                            class="w-2.5 h-2.5 rounded-full bg-green-500 dark:bg-cyan-400 animate-pulse shadow-lg shadow-green-400/50 dark:shadow-cyan-400/70">
-                        </div>
-                        <span class="text-sm font-bold text-green-700 dark:text-cyan-400">LIVE</span>
+    class="h-screen w-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-slate-800 dark:to-gray-900 p-4 flex flex-col gap-4 overflow-hidden">
+
+    <!-- Upper Section: Weather Info Bar -->
+    <div
+        class="h-16 flex-shrink-0 rounded-2xl bg-white/80 dark:bg-gradient-to-r dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-sm border border-blue-200 dark:border-cyan-500/20 shadow-xl shadow-blue-100/50 dark:shadow-cyan-500/10 px-6 flex items-center justify-between z-20">
+        <div class="flex items-center gap-6">
+            <div class="flex items-center gap-3">
+                <div
+                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+                    <i class="fa-solid fa-water text-white text-xl"></i>
+                </div>
+                <h2
+                    class="text-2xl font-black text-blue-800 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-cyan-400 dark:to-blue-500 uppercase tracking-widest">
+                    Terra Nemo</h2>
+                </div>
+            <div class="h-8 w-px bg-blue-200 dark:bg-slate-700"></div>
+            <div class="flex items-center gap-8">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-cloud-sun text-2xl text-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]"></i>
+                    <div>
+                        <div class="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Current
+                            Weather</div>
+                        <div class="text-sm font-bold text-gray-800 dark:text-slate-200">Partly Cloudy, 24°C</div>
                     </div>
                 </div>
-
-                <div class="grid grid-cols-3 gap-4 h-[calc(100%-60px)]">
-                    <div *ngFor="let w of widgetData"
-                        class="group relative flex flex-col justify-between p-5 rounded-xl bg-gradient-to-br from-blue-50 to-white dark:from-slate-700/50 dark:to-slate-800/50 border border-blue-200 dark:border-slate-600/50 shadow-md hover:shadow-xl hover:shadow-blue-200/50 dark:hover:border-cyan-400/50 dark:hover:shadow-cyan-400/20 dark:hover:shadow-2xl hover:-translate-y-0.5 transition-all duration-300">
-                        <div
-                            class="absolute inset-0 bg-gradient-to-br from-blue-100/0 to-cyan-100/0 dark:from-cyan-500/0 dark:to-blue-500/0 group-hover:from-blue-100/30 group-hover:to-cyan-100/30 dark:group-hover:from-cyan-500/5 dark:group-hover:to-blue-500/5 rounded-xl transition-all duration-300">
-                        </div>
-
-                        <div class="relative flex items-center gap-3 mb-3">
-                            <div
-                                class="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 dark:from-cyan-500 dark:to-blue-600 flex items-center justify-center shadow-lg shadow-blue-400/30 dark:shadow-cyan-500/30">
-                                <i class="fa-solid text-white text-xl" [ngClass]="w.icon"></i>
-                            </div>
-                            <span class="text-sm font-semibold text-gray-700 dark:text-slate-300">{{w.label}}</span>
-                        </div>
-                        <div class="relative text-3xl font-bold text-gray-900 dark:text-white">
-                            {{w.val | number:'1.1-1'}}<span
-                                class="text-lg font-medium text-blue-600 dark:text-cyan-400 ml-1">{{w.unit}}</span>
-                        </div>
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-eye text-2xl text-blue-500 dark:text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]"></i>
+                    <div>
+                        <div class="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Visibility</div>
+                        <div class="text-sm font-bold text-gray-800 dark:text-slate-200">10 Nautical Miles</div>
                     </div>
-                    <div class="group relative flex flex-col justify-between p-5 rounded-xl
-         bg-gradient-to-br from-blue-50 to-white
-         dark:from-slate-700/50 dark:to-slate-800/50
-         border border-blue-200 dark:border-slate-600/50
-         shadow-md hover:shadow-xl hover:shadow-blue-200/50
-         dark:hover:border-cyan-400/50 dark:hover:shadow-cyan-400/20
-         dark:hover:shadow-2xl hover:-translate-y-0.5
-         transition-all duration-300">
-
-                        <!-- hover overlay -->
-                        <div class="absolute inset-0 bg-gradient-to-br
-           from-blue-100/0 to-cyan-100/0
-           dark:from-cyan-500/0 dark:to-blue-500/0
-           group-hover:from-blue-100/30 group-hover:to-cyan-100/30
-           dark:group-hover:from-cyan-500/5 dark:group-hover:to-blue-500/5
-           rounded-xl transition-all duration-300 ">
-                            <img src="../../../assets/anemometer.jpeg" class="bg-cover h-full w-full rounded-xl" alt="">
-                        </div>
-
-                        <!-- Image content -->
-                        <div class="relative flex items-center justify-center h-full">
-                            <!-- <img src="../../../assets/anemometer.jpeg" alt="Widget Image" class="object-cover " /> -->
-                        </div>
-                    </div>
-
                 </div>
             </div>
+            </div>
 
-            <!-- Bottom Row: Additional Parameters and Alerts -->
-            <div class="grid grid-cols-2 gap-3 h-[30%]">
-                <!-- Additional Parameters Section -->
+        <div class="flex items-center gap-4">
+            <div
+                class="bg-white/50 dark:bg-slate-800/50 px-4 py-2 rounded-xl text-sm font-bold border border-blue-200 dark:border-cyan-400/20 text-blue-800 dark:text-cyan-400 shadow-inner">
+                STATION: {{ selectedStation || 'DEFAULT' }}
+            </div>
+            <div
+                class="flex items-center gap-2 bg-green-100 dark:bg-emerald-500/10 px-4 py-2 rounded-xl border border-green-300 dark:border-emerald-400/30">
                 <div
-                    class="rounded-2xl h-[70%] bg-white/80 dark:bg-gradient-to-br dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-sm border border-blue-200 dark:border-cyan-500/20 p-4 shadow-lg shadow-blue-100/50 dark:shadow-cyan-500/10">
-                    <h2 class="text-sm font-bold text-blue-700 dark:text-cyan-400 uppercase tracking-wide mb-3">
-                        Additional Parameters
-                    </h2>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div
-                            class="flex flex-col justify-center p-3 rounded-lg bg-blue-50 dark:bg-slate-700/50 border border-blue-200 dark:border-blue-500/30">
-                            <div class="flex items-center gap-2 mb-1">
-                                <i class="fa-solid fa-water text-blue-600 dark:text-blue-400 text-sm"></i>
-                                <span class="text-xs font-semibold text-gray-700 dark:text-slate-300">Sea State</span>
-                            </div>
-                            <div class="text-lg font-bold text-gray-900 dark:text-white">Calm</div>
-                        </div>
-                        <div
-                            class="flex flex-col justify-center p-3 rounded-lg bg-green-50 dark:bg-slate-700/50 border border-green-200 dark:border-green-500/30">
-                            <div class="flex items-center gap-2 mb-1">
-                                <i class="fa-solid fa-ship text-green-600 dark:text-green-400 text-sm"></i>
-                                <span class="text-xs font-semibold text-gray-700 dark:text-slate-300">Vessel
-                                    Speed</span>
-                            </div>
-                            <div class="text-lg font-bold text-gray-900 dark:text-white">15.2 kts</div>
-                        </div>
-                        <div
-                            class="flex flex-col justify-center p-3 rounded-lg bg-purple-50 dark:bg-slate-700/50 border border-purple-200 dark:border-purple-500/30">
-                            <div class="flex items-center gap-2 mb-1">
-                                <i class="fa-solid fa-compass text-purple-600 dark:text-purple-400 text-sm"></i>
-                                <span class="text-xs font-semibold text-gray-700 dark:text-slate-300">Heading</span>
-                            </div>
-                            <div class="text-lg font-bold text-gray-900 dark:text-white">045°</div>
-                        </div>
-                        <div
-                            class="flex flex-col justify-center p-3 rounded-lg bg-red-50 dark:bg-slate-700/50 border border-red-200 dark:border-red-500/30">
-                            <div class="flex items-center gap-2 mb-1">
-                                <i class="fa-solid fa-anchor text-red-600 dark:text-red-400 text-sm"></i>
-                                <span class="text-xs font-semibold text-gray-700 dark:text-slate-300">Depth</span>
-                            </div>
-                            <div class="text-lg font-bold text-gray-900 dark:text-white">120 m</div>
-                        </div>
-                    </div>
+                    class="w-2.5 h-2.5 rounded-full bg-green-500 dark:bg-emerald-400 animate-pulse shadow-lg shadow-green-400/50 dark:shadow-emerald-400/70">
                 </div>
-
-                <!-- Alerts Column -->
-                <div class="flex flex-col gap-3">
-                    <!-- Weather Alert -->
-                    <div
-                        class="h-[33%] rounded-2xl bg-amber-50 dark:bg-gradient-to-br dark:from-yellow-900/40 dark:to-orange-900/40 border border-amber-300 dark:border-yellow-500/40 p-4 shadow-lg shadow-amber-100/50 dark:shadow-yellow-500/10">
-                        <div class="flex items-center justify-between mb-2">
-                            <span
-                                class="text-xs font-bold uppercase tracking-wide text-amber-700 dark:text-yellow-400">Weather
-                                Alert</span>
-                            <i
-                                class="fa-solid fa-triangle-exclamation animate-pulse text-lg text-amber-600 dark:text-yellow-400"></i>
-                        </div>
-                        <div class="text-lg font-bold leading-tight mb-1 text-gray-900 dark:text-white">High Wind
-                            Pattern Detected</div>
-                        <p class="text-xs text-gray-700 dark:text-slate-300">Expect gusty winds up to 25kts in the next
-                            2 hours.</p>
-                    </div>
-
-                    <!-- Navigation Alert -->
-                    <div
-                        class="h-[33%] rounded-2xl bg-red-50 dark:bg-gradient-to-br dark:from-red-900/40 dark:to-rose-900/40 border border-red-300 dark:border-red-500/40 p-4 shadow-lg shadow-red-100/50 dark:shadow-red-500/10">
-                        <div class="flex items-center justify-between mb-2">
-                            <span
-                                class="text-xs font-bold uppercase tracking-wide text-red-700 dark:text-red-400">Navigation
-                                Alert</span>
-                            <i
-                                class="fa-solid fa-exclamation-triangle animate-pulse text-lg text-red-600 dark:text-red-400"></i>
-                        </div>
-                        <div class="text-lg font-bold leading-tight mb-1 text-gray-900 dark:text-white">Shallow Waters
-                            Ahead</div>
-                        <p class="text-xs text-gray-700 dark:text-slate-300">Reduce speed to avoid grounding. Depth
-                            decreasing to 50m.</p>
-                    </div>
-                </div>
+                <span class="text-sm font-bold text-green-700 dark:text-emerald-400 tracking-wide">SYSTEM ONLINE</span>
             </div>
         </div>
+        </div>
 
-        <!-- Right: Map and Stats (42%) -->
-        <div class="w-[42%] h-[91%] flex flex-col gap-3 min-h-0">
-            <!-- Map -->
+    <!-- Main Content Area -->
+    <div class="flex-1 flex gap-4 min-h-0">
+    
+        <!-- Left Column: Parameter Grid (60%) -->
+        <div class="w-[60%] flex flex-col gap-4">
             <div
-                class="h-[75%] rounded-2xl bg-white/80 dark:bg-gradient-to-br dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-sm border border-blue-200 dark:border-cyan-500/20 p-1 shadow-xl shadow-blue-100/50 dark:shadow-cyan-500/10 overflow-hidden relative">
-                <app-map [selectedStation]="selectedStation!"></app-map>
-                <div class="absolute top-4 left-4 right-4 flex justify-between items-start pointer-events-none">
-                    <div
-                        class="bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm px-4 py-2 rounded-xl text-sm font-bold border border-blue-300 dark:border-cyan-400/30 shadow-lg pointer-events-auto text-blue-700 dark:text-cyan-400">
-                        LIVE STATION: {{ selectedStation || 'DEFAULT' }}
-                    </div>
-                    <div class="flex gap-2 pointer-events-auto">
+                class="flex-1 rounded-2xl bg-white/80 dark:bg-gradient-to-br dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-sm border border-blue-200 dark:border-cyan-500/20 shadow-xl shadow-blue-100/50 dark:shadow-cyan-500/10 p-5 flex flex-col relative overflow-hidden">
+    
+                <!-- Background blur effects for deep glassmorphism -->
+                <div
+                    class="absolute -top-40 -left-40 w-96 h-96 bg-blue-400/20 dark:bg-cyan-500/10 rounded-full blur-[100px] pointer-events-none">
+                </div>
+                <div
+                    class="absolute -bottom-40 -right-40 w-96 h-96 bg-cyan-400/20 dark:bg-blue-600/10 rounded-full blur-[100px] pointer-events-none">
+                </div>
+    
+                <div class="grid grid-cols-3 gap-4 h-full content-start overflow-y-auto pr-2 pb-2 z-10 custom-scrollbar">
+    
+                    <!-- Standard 9 Parameter Cards -->
+                    <div *ngFor="let w of getNormalCards()"
+                        class="group relative flex flex-col justify-between p-4 rounded-xl bg-gradient-to-br from-white/60 to-blue-50/60 dark:from-slate-800/60 dark:to-slate-900/60 backdrop-blur-md border border-white/50 dark:border-slate-600/30 shadow-lg hover:shadow-xl hover:shadow-cyan-500/20 dark:hover:border-cyan-400/40 hover:-translate-y-1 transition-all duration-300 overflow-hidden min-h-[140px]">
+    
+                        <!-- Echarts background sparkline -->
                         <div
-                            class="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide shadow-lg shadow-green-400/40 dark:shadow-green-500/40">
-                            System Online
+                            class="absolute inset-x-0 bottom-0 top-[20%] opacity-100 pointer-events-none flex flex-col justify-end">
+                            <div echarts [options]="getChartOption(w.trend, isDarkMode, w.barColor)"
+                                class="w-full h-full mix-blend-multiply dark:mix-blend-lighten"></div>
+                        </div>
+    
+                        <!-- 3D Glass overlay on hover -->
+                        <div
+                            class="absolute inset-0 bg-gradient-to-br from-white/0 to-white/0 dark:from-cyan-500/0 dark:to-blue-500/0 group-hover:from-white/40 group-hover:to-white/10 dark:group-hover:from-cyan-500/10 dark:group-hover:to-blue-500/5 rounded-xl transition-all duration-300 pointer-events-none">
+                        </div>
+    
+                        <div class="relative flex items-center justify-between z-10 pointer-events-none">
+                            <div class="flex items-center gap-3">
+                                <div
+                                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-100 to-white dark:from-slate-700 dark:to-slate-800 flex items-center justify-center shadow-inner border border-white/50 dark:border-slate-600 shadow-lg group-hover:shadow-cyan-400/30 transition-all">
+                                    <i class="fa-solid text-lg bg-clip-text text-transparent bg-gradient-to-br"
+                                        [ngClass]="[w.icon, w.barColor]"></i>
+                                </div>
+                                <span
+                                    class="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest">{{w.label}}</span>
+                            </div>
+                            </div>
+
+                        <div class="relative flex items-baseline gap-1 mt-auto z-10 pt-4 pointer-events-none">
+                            <div class="text-4xl font-black tracking-tighter text-gray-800 dark:text-white drop-shadow-md">
+                                {{w.val | number:'1.1-1'}}
+                            </div>
+                            <span class="text-sm font-bold text-cyan-600 dark:text-cyan-400">{{w.unit}}</span>
                         </div>
                     </div>
+<!-- GPS double wide card -->
+<div *ngIf="getGpsCard() as gps"
+    class="col-span-3 group relative flex flex-col p-5 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 shadow-2xl hover:shadow-cyan-500/20 hover:border-cyan-500/50 hover:-translate-y-1 transition-all duration-300 overflow-hidden min-h-[140px]">
+
+    <!-- High tech grid background -->
+    <div
+        class="absolute inset-0 opacity-20 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHBhdGggZD0iTTEgMWgxOHYxOEgxeiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMzhCRkY4IiBzdHJva2Utb3BhY2l0eT0iMC4yIi8+PC9zdmc+')] bg-[length:30px_30px] pointer-events-none">
+    </div>
+
+    <div class="relative flex items-center justify-between mb-2 z-10 pointer-events-none">
+        <div class="flex items-center gap-3">
+            <div
+                class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-[0_0_15px_rgba(34,211,238,0.4)]">
+                <i class="fa-solid fa-location-crosshairs text-white text-lg"></i>
+            </div>
+                                <span class="text-xs font-bold text-cyan-400 uppercase tracking-widest drop-shadow-[0_0_5px_rgba(34,211,238,0.5)]">GPS
+                                    Coordinates</span>
+                            </div>
+                        </div>
+                        <div class="relative flex justify-around items-center w-full mt-auto z-10 pointer-events-none">
+                            <div class="flex flex-col items-center group-hover:scale-105 transition-transform">
+                                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">LATITUDE</span>
+                                <div
+                                    class="font-mono text-4xl font-black text-white tracking-tight drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
+                                    {{gps.lat | number:'1.4-4'}}° N</div>
+                            </div>
+                            <div class="w-px h-16 bg-gradient-to-b from-transparent via-cyan-500/50 to-transparent"></div>
+                            <div class="flex flex-col items-center group-hover:scale-105 transition-transform">
+                                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">LONGITUDE</span>
+                                <div class="font-mono text-4xl font-black text-white tracking-tight drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
+                                    {{gps.lon | number:'1.4-4'}}° E</div>
+                            </div>
+                            </div>
+                            </div>
                 </div>
             </div>
+            <!-- Bottom Bar: Status Area -->
+            <div class="h-24 flex-shrink-0 grid grid-cols-3 gap-4">
+                <!-- Alerts (taking 2 cols) -->
+                <div
+                    class="col-span-2 rounded-2xl bg-white/80 dark:bg-slate-800/90 backdrop-blur-sm border border-red-200 dark:border-red-500/30 p-4 shadow-lg shadow-red-500/10 flex items-center gap-4 relative overflow-hidden group">
+                    <div class="absolute inset-0 bg-red-500/5 dark:bg-red-500/10 animate-pulse pointer-events-none"></div>
+                    <div class="w-12 h-12 rounded-xl bg-red-100 dark:bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                        <i class="fa-solid fa-triangle-exclamation text-2xl text-red-600 dark:text-red-400 animate-bounce"></i>
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-bold uppercase tracking-widest text-red-600 dark:text-red-400 mb-0.5">Critical Alert
+                        </div>
+                        <div class="text-sm font-bold text-gray-800 dark:text-white leading-tight">High Wind Pattern Detected. Expect gusty
+                            winds up to 25kts in the next 2 hours.</div>
+                    </div>
+                </div>
+<!-- Uptime & Fuel -->
+<div
+    class="rounded-2xl bg-white/80 dark:bg-slate-800/90 backdrop-blur-sm border border-blue-200 dark:border-cyan-500/20 p-4 shadow-lg flex flex-col justify-center gap-2">
+    <div class="flex items-center justify-between">
+        <span class="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest">Uptime</span>
+        <span class="text-sm font-black text-cyan-600 dark:text-cyan-400">99.9%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                        <div class="bg-gradient-to-r from-cyan-400 to-blue-500 h-full rounded-full" style="width: 99.9%"></div>
+                    </div>
+                    <div class="flex items-center justify-between mt-1">
+                        <span class="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest">Fuel Level</span>
+                        <span class="text-sm font-black text-emerald-600 dark:text-emerald-400">78%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                        <div class="bg-gradient-to-r from-emerald-400 to-green-500 h-full rounded-full" style="width: 78%"></div>
+                    </div>
+                    </div>
+                    </div>
+                    </div>
 
-            <!-- Stats Grid -->
-            <div class="grid grid-cols-2 gap-3">
+        <!-- Right Column: Map & Health (40%) -->
+        <div class="w-[40%] flex flex-col gap-4 min-h-0">
+            <!-- 3D Globe Map -->
+            <div
+                class="flex-1 rounded-2xl bg-white/80 dark:bg-slate-800/90 backdrop-blur-sm border border-blue-200 dark:border-cyan-500/20 p-1 shadow-xl shadow-cyan-500/10 overflow-hidden relative group">
+                <app-map [selectedStation]="selectedStation!"></app-map>
+        
+                <!-- Map Overlay Glass Box -->
                 <div
-                    class="rounded-xl bg-gradient-to-br from-blue-50 to-white dark:from-slate-700/70 dark:to-slate-800/70 border border-blue-300 dark:border-blue-500/30 p-4 shadow-lg hover:shadow-xl hover:shadow-blue-200/50 dark:hover:border-blue-400/50 dark:hover:shadow-blue-400/20 transition-all duration-300 flex items-center gap-3">
+                    class="absolute bottom-4 left-4 right-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/50 dark:border-slate-700 p-3 rounded-xl flex items-center justify-between shadow-lg pointer-events-none transition-all duration-300 transform translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-satellite text-cyan-500"></i>
+                        <span class="text-xs font-bold text-gray-700 dark:text-slate-300">Live Satellite Feed</span>
+                    </div>
+                    <div class="text-xs font-mono text-gray-500 dark:text-slate-400">SYNC: ACTUAL</div>
+                    </div>
+            </div>
+<!-- Sensor Health Status Panel -->
+<div
+    class="h-40 flex-shrink-0 rounded-2xl bg-white/80 dark:bg-gradient-to-br dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-sm border border-blue-200 dark:border-cyan-500/20 shadow-xl shadow-cyan-500/10 p-5 flex flex-col relative overflow-hidden">
+    <div class="flex items-center gap-3 mb-4 z-10">
+        <i class="fa-solid fa-microchip text-blue-500 dark:text-cyan-400"></i>
+        <h3 class="text-sm font-bold text-gray-800 dark:text-white uppercase tracking-widest">Sensor Health Status</h3>
+    </div>
+                <div class="flex-1 grid grid-cols-3 gap-3 z-10">
+                    <!-- Sensor 1 -->
                     <div
-                        class="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-400/30 dark:shadow-blue-500/30">
-                        <i class="fa-solid fa-calendar-days text-white text-lg"></i>
+                        class="bg-white/50 dark:bg-slate-800/80 border border-blue-100 dark:border-slate-700 rounded-xl p-3 flex flex-col items-center justify-center gap-2 hover:border-cyan-400/50 transition-colors">
+                        <div class="relative">
+                            <i class="fa-solid fa-wind text-gray-600 dark:text-slate-300 text-lg"></i>
+                            <div
+                                class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_5px_#10b981]">
+                            </div>
+                        </div>
+                        <span
+                            class="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider text-center">Anemometer</span>
                     </div>
-                    <div>
-                        <div class="text-xs font-bold text-blue-700 dark:text-blue-400 uppercase">Voyage Day</div>
-                        <div class="text-xl font-bold text-gray-900 dark:text-white">12</div>
-                    </div>
-                </div>
-                <div
-                    class="rounded-xl bg-gradient-to-br from-purple-50 to-white dark:from-slate-700/70 dark:to-slate-800/70 border border-purple-300 dark:border-purple-500/30 p-4 shadow-lg hover:shadow-xl hover:shadow-purple-200/50 dark:hover:border-purple-400/50 dark:hover:shadow-purple-400/20 transition-all duration-300 flex items-center gap-3">
+                    <!-- Sensor 2 -->
                     <div
-                        class="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-400/30 dark:shadow-purple-500/30">
-                        <i class="fa-solid fa-clock text-white text-lg"></i>
+                        class="bg-white/50 dark:bg-slate-800/80 border border-blue-100 dark:border-slate-700 rounded-xl p-3 flex flex-col items-center justify-center gap-2 hover:border-cyan-400/50 transition-colors">
+                        <div class="relative">
+                            <i class="fa-solid fa-satellite-dish text-gray-600 dark:text-slate-300 text-lg"></i>
+                            <div
+                                class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_5px_#10b981]">
+                            </div>
+                        </div>
+                        <span
+                            class="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider text-center">Telemetry</span>
                     </div>
-                    <div>
-                        <div class="text-xs font-bold text-purple-700 dark:text-purple-400 uppercase">Uptime</div>
-                        <div class="text-xl font-bold text-gray-900 dark:text-white">99.9%</div>
-                    </div>
-                </div>
-                <div
-                    class="rounded-xl bg-gradient-to-br from-green-50 to-white dark:from-slate-700/70 dark:to-slate-800/70 border border-green-300 dark:border-emerald-500/30 p-4 shadow-lg hover:shadow-xl hover:shadow-green-200/50 dark:hover:border-emerald-400/50 dark:hover:shadow-emerald-400/20 transition-all duration-300 flex items-center gap-3">
+                    <!-- Sensor 3 -->
                     <div
-                        class="w-12 h-12 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 dark:from-emerald-500 dark:to-teal-500 flex items-center justify-center shadow-lg shadow-green-400/30 dark:shadow-emerald-500/30">
-                        <i class="fa-solid fa-gas-pump text-white text-lg"></i>
-                    </div>
-                    <div>
-                        <div class="text-xs font-bold text-green-700 dark:text-emerald-400 uppercase">Fuel Level</div>
-                        <div class="text-xl font-bold text-gray-900 dark:text-white">78%</div>
-                    </div>
-                </div>
-                <div
-                    class="rounded-xl bg-gradient-to-br from-cyan-50 to-white dark:from-slate-700/70 dark:to-slate-800/70 border border-cyan-300 dark:border-cyan-500/30 p-4 shadow-lg hover:shadow-xl hover:shadow-cyan-200/50 dark:hover:border-cyan-400/50 dark:hover:shadow-cyan-400/20 transition-all duration-300 flex items-center gap-3">
-                    <div
-                        class="w-12 h-12 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center shadow-lg shadow-cyan-400/30 dark:shadow-cyan-500/30">
-                        <i class="fa-solid fa-battery-half text-white text-lg"></i>
-                    </div>
-                    <div>
-                        <div class="text-xs font-bold text-cyan-700 dark:text-cyan-400 uppercase">Battery</div>
-                        <div class="text-xl font-bold text-gray-900 dark:text-white">92%</div>
+                        class="bg-white/50 dark:bg-slate-800/80 border border-blue-100 dark:border-slate-700 rounded-xl p-3 flex flex-col items-center justify-center gap-2 hover:border-yellow-400/50 transition-colors">
+                        <div class="relative">
+                            <i class="fa-solid fa-battery-half text-gray-600 dark:text-slate-300 text-lg"></i>
+                            <div class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-yellow-500 animate-pulse shadow-[0_0_5px_#eab308]">
+                            </div>
+                        </div>
+                        <span class="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider text-center">Power
+                            Unit</span>
                     </div>
                 </div>
             </div>

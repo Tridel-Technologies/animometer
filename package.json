@@ -33,11 +33,11 @@
     "@primeuix/themes": "^2.0.2",
     "@tensorflow-models/coco-ssd": "^2.2.3",
     "@tensorflow/tfjs": "^4.22.0",
-    "plotly.js-dist-min": "^3.0.1",
     "angular-plotly.js": "^6.0.0",
     "echarts": "^6.0.0",
     "mapbox-gl": "^3.17.0",
     "ngx-echarts": "^21.0.0",
+    "plotly.js-dist-min": "^3.0.1",
     "primeng": "^21.0.2",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
