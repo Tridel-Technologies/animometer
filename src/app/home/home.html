@@ -35,33 +35,58 @@
     </div>
 
     <!-- Main Content -->
-    <div class="flex-1  flex flex-col min-h-0">
+    <div class="flex-1 flex flex-col min-w-0 min-h-0">
 
-        <!-- Top Header -->
+        <!-- Upper Section: Weather Info Bar / App Header -->
         <div
-            class="bg-white w-[calc(100%-4rem)] dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 py-4 pr-35 flex items-center justify-between shadow-sm z-10">
-            <div class="flex items-center gap-4">
-                <div>
-                    <h1 class="text-xl font-bold text-slate-900 dark:text-white">
-                        Marine Navigation Console
-                    </h1>
-                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-tighter">
-                        Real-time Monitoring • {{ formatDateTime() }} UTC</p>
+            class="h-16 mx-4 mt-4 flex-shrink-0 rounded-2xl bg-white/80 dark:bg-gradient-to-r dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-sm border border-blue-200 dark:border-cyan-500/20 shadow-xl shadow-blue-100/50 dark:shadow-cyan-500/10 px-4 md:px-6 flex items-center justify-between z-20">
+            <div class="flex items-center gap-6">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+                        <i class="fa-solid fa-water text-white text-xl"></i>
+                    </div>
+                    <h2
+                        class="text-2xl font-black text-blue-800 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-cyan-400 dark:to-blue-500 uppercase tracking-widest">
+                        Terra Nemo</h2>
+                </div>
+        
+                <div class="h-8 w-px bg-blue-200 dark:bg-slate-700"></div>
+        
+                <div class="flex items-center gap-8 hidden lg:flex">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-cloud-sun text-2xl text-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]"></i>
+                        <div>
+                            <div class="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Current Weather</div>
+                            <div class="text-sm font-bold text-gray-800 dark:text-slate-200">Partly Cloudy, 24°C</div>
+                            </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-eye text-2xl text-blue-500 dark:text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]"></i>
+                                <div>
+                                    <div class="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Visibility</div>
+                                    <div class="text-sm font-bold text-gray-800 dark:text-slate-200">10 Nautical Miles</div>
+                                </div>
+                            </div>
                 </div>
             </div>
 
-            <div class="flex items-center gap-6">
-                <div class="text-right hidden sm:block">
-                    <div class="font-mono text-blue-600 dark:text-blue-400 font-bold text-lg leading-none">{{
-                        formatDateTime() }} UTC</div>
-                    <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Vessel: <span
-                            class="font-bold text-slate-900 dark:text-white">James Bond</span></div>
+            <div class="flex items-center gap-4">
+                <div
+                    class="hidden sm:block bg-white/50 dark:bg-slate-800/50 px-4 py-2 rounded-xl text-sm font-bold border border-blue-200 dark:border-cyan-400/20 text-blue-800 dark:text-cyan-400 shadow-inner">
+                    STATION: {{ selectedStation || 'DEFAULT' }}
                 </div>
-
+                <div
+                    class="hidden sm:flex items-center gap-2 bg-green-100 dark:bg-emerald-500/10 px-4 py-2 rounded-xl border border-green-300 dark:border-emerald-400/30">
+                    <div
+                        class="w-2.5 h-2.5 rounded-full bg-green-500 dark:bg-emerald-400 animate-pulse shadow-lg shadow-green-400/50 dark:shadow-emerald-400/70">
+                    </div>
+                    <span class="text-sm font-bold text-green-700 dark:text-emerald-400 tracking-wide">ONLINE</span>
+                </div>
                 <!-- Theme Toggle -->
                 <button (click)="toggleTheme()"
-                    class="w-10 h-10 rounded-full flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:scale-105 transition-transform shadow-inner">
-                    <i class="fa-solid" [ngClass]="isDarkMode ? 'fa-sun' : 'fa-moon'"></i>
+                    class="w-10 h-10 rounded-xl flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors border border-blue-200 dark:border-cyan-500/20 shadow-sm">
+                    <i class="fa-solid" [ngClass]="isDarkMode ? 'fa-sun text-yellow-500' : 'fa-moon text-blue-600'"></i>
                 </button>
             </div>
         </div>

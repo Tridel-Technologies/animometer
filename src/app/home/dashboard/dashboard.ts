@@ -41,7 +41,7 @@ export class Dashboard implements OnInit {
     return this.widgetData.find(w => w.id === 'gps');
   }
 
-  getChartOption(trend: number[] | undefined, isDarkMode: boolean, colorClass: string): echarts.EChartsOption {
+  getChartOption(trend: number[] | undefined, isDarkMode: boolean, colorClass: string, id: string): echarts.EChartsOption {
     if (!trend) trend = [];
 
     let color = '#3b82f6'; // default blue
@@ -76,16 +76,24 @@ export class Dashboard implements OnInit {
           symbol: 'none',
           lineStyle: {
             color: color,
-            width: isDarkMode ? 2.5 : 1.5,
+            width: 2,
             shadowColor: isDarkMode ? color : 'transparent',
-            shadowBlur: isDarkMode ? 10 : 0,
+            shadowBlur: isDarkMode ? 5 : 0,
             shadowOffsetY: isDarkMode ? 0 : 0
           },
           areaStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: isDarkMode ? 'transparent' : `${color}40` },
+              { offset: 0, color: isDarkMode ? 'transparent' : `${color}30` },
               { offset: 1, color: isDarkMode ? 'transparent' : `${color}00` }
             ])
+          },
+          markPoint: {
+            data: [
+              { name: 'Max', type: 'max', symbol: 'circle', symbolSize: 6, itemStyle: { color: id === 'solar' ? '#fcd34d' : 'rgba(255,255,255,0.8)', shadowBlur: 8, shadowColor: id === 'solar' ? '#f59e0b' : 'white' } },
+              { name: 'Min', type: 'min', symbol: 'circle', symbolSize: 6, itemStyle: { color: id === 'solar' ? '#fcd34d' : 'rgba(255,255,255,0.8)', shadowBlur: 8, shadowColor: id === 'solar' ? '#f59e0b' : 'white' } },
+              { name: 'Current', coord: [trend.length - 1, trend[trend.length - 1]], symbol: 'circle', symbolSize: 6, itemStyle: { color: id === 'solar' ? '#fcd34d' : 'rgba(255,255,255,0.8)', shadowBlur: 8, shadowColor: id === 'solar' ? '#f59e0b' : 'white' } }
+            ],
+            label: { show: false }
           }
         }
       ]
