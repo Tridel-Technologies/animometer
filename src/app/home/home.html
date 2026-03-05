@@ -86,8 +86,12 @@
             <!-- Settings Page -->
             <app-settings *ngIf="activeTab === 'settings'" [thresholds]="thresholds"></app-settings>
 
+            <!-- ship-schedule Page -->
+            <app-ship-schedule *ngIf="activeTab === 'ship-schedule'"></app-ship-schedule>
+
             <!-- Profile Page -->
             <app-profile *ngIf="activeTab === 'profile'" [currentUser]="currentUser"></app-profile>
+
 
         </div>
     </div>

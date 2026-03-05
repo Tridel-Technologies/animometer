@@ -13,6 +13,10 @@ app.use(cors());
 // Sample route
 app.use('/api/', router);
 
+// Ship Schedule routes
+const shipScheduleRoute = require('./router/shipScheduleRoute');
+app.use('/api/ship-schedules', shipScheduleRoute);
+
 connectDB();
 
 // Start the server

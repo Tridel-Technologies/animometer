@@ -11,6 +11,7 @@ import { Report } from './report/report';
 import { Analysis } from './analysis/analysis';
 import { Settings } from './settings/settings';
 import { Profile } from './profile/profile';
+import { ShipSchedule } from './ship-schedule/ship-schedule';
 import { ApiService, WindData } from '../apiService/api-service';
 
 interface AnemometerData {
@@ -32,7 +33,7 @@ interface NavItem {
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, HttpClientModule, TabsModule, Dashboard, Report, Analysis, Settings, Profile],
+  imports: [CommonModule, HttpClientModule, TabsModule, Dashboard, Report, Analysis, Settings, Profile, ShipSchedule],
   templateUrl: './home.html',
 })
 export class Home implements OnInit, OnDestroy, AfterViewInit {
@@ -140,7 +141,8 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
     { id: 'report', icon: 'fa-file-lines', label: 'Reports' },
     { id: 'analysis', icon: 'fa-chart-line', label: 'Analysis' },
     { id: 'settings', icon: 'fa-gear', label: 'Settings' },
-    { id: 'profile', icon: 'fa-user', label: 'Profile' }
+    { id: 'ship-schedule', icon: 'fa-ship', label: 'Ship Schedule' },
+    { id: 'profile', icon: 'fa-user', label: 'Profile' },
   ];
 
   // Report Column Visibility
