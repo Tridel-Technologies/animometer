@@ -1,189 +1,207 @@
-import { Component, AfterViewInit, ElementRef, ViewChild, OnInit, OnDestroy, HostListener, Input } from '@angular/core';
+import { Component, AfterViewInit, ElementRef, ViewChild, OnInit, OnDestroy, HostListener, Input, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { WindChartComponent } from '../../wind-chart/wind-chart';
-import { PolarChartComponent, PolarAxis } from '../../polar-chart/polar-chart';
+import { ApiService } from '../../apiService/api-service';
+import { UnitConversionService } from '../../apiService/unit-conversion.service';
+
+// PrimeNG v21 Module Imports
+import { DatePickerModule } from 'primeng/datepicker';
+import { SelectModule } from 'primeng/select';
+import { ButtonModule } from 'primeng/button';
+import { SelectButtonModule } from 'primeng/selectbutton';
 
 @Component({
   selector: 'app-analysis',
   standalone: true,
-  imports: [CommonModule, WindChartComponent, PolarChartComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    WindChartComponent,
+    DatePickerModule,
+    SelectModule,
+    ButtonModule,
+    SelectButtonModule
+  ],
   templateUrl: './analysis.html',
   styleUrl: './analysis.css',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class Analysis implements OnInit, AfterViewInit, OnDestroy {
+export class Analysis implements OnInit, OnDestroy, AfterViewInit {
   @Input() reportData: any[] = [];
   @Input() anemometerData: any;
-  @ViewChild('leftChartContainer', { static: false }) leftChartContainer!: ElementRef;
-  @ViewChild('rightChartContainer', { static: false }) rightChartContainer!: ElementRef;
-  @ViewChild('polarChartContainer', { static: false }) polarChartContainer!: ElementRef;
+  @Input() initialUnits: any[] = [];
+  @Input() sensorConfigs: any[] = [];
+  @Input() selectedStation: string | null = null;
+  @Input() stations: any[] = [];
+  @ViewChild('chartContainer') chartContainer!: ElementRef;
 
-  // Chart dimensions
-  leftChartWidth: number = 400;
-  leftChartHeight: number = 200;
-  polarChartWidth: number = 400;
-  polarChartHeight: number = 400;
+  chartWidth: number = 1000;
+  private resizeObserver: ResizeObserver | null = null;
 
-  // Filter options
   timeScales = [
-    { label: 'Day', value: 'day' },
-    { label: 'Week', value: 'week' },
-    { label: 'Month', value: 'month' },
-    { label: 'Year', value: 'year' }
+    { label: 'Day', value: 'Day' },
+    { label: 'Week', value: 'Week' },
+    { label: 'Month', value: 'Month' },
+    { label: 'Year', value: 'Year' }
   ];
 
-  selectedTimeScale: string = 'day';
-  selectedDate: string = new Date().toISOString().split('T')[0];
-  selectedStation: string = 'Main Mast 01';
-
-  stations = [
-    'Main Mast 01',
-    'Front Bridge 02',
-    'Port Side 03',
-    'Starboard Side 04'
-  ];
+  selectedTimeScale: string = 'Day';
+  selectedDate: Date = new Date();
 
   parameters = [
-    { label: 'Wind Speed', key: 'windSpeed', selected: true },
-    { label: 'Wind Direction', key: 'windDirection', selected: true },
-    { label: 'Temperature', key: 'temperature', selected: false },
-    { label: 'Humidity', key: 'humidity', selected: false },
-    { label: 'Pressure', key: 'pressure', selected: false }
+    { label: 'Wind UX', key: 'uv', selected: true, color: '#22d3ee' },
+    { label: 'Wind UY', key: 'uy', selected: true, color: '#10b981' },
+    { label: 'Wind UZ', key: 'uz', selected: true, color: '#f59e0b' },
+    { label: 'Rainfall', key: 'rain', selected: true, color: '#3b82f6' },
+    { label: 'Temp', key: 'temp', selected: true, color: '#ef4444' },
+    { label: 'Solar', key: 'solar', selected: true, color: '#facc15' },
+    { label: 'Humidity', key: 'humidity', selected: true, color: '#8b5cf6' },
+    { label: 'Pressure', key: 'pressure', selected: true, color: '#6366f1' },
+    { label: 'Battery', key: 'battery', selected: true, color: '#10b981' },
+    { label: 'Wind Speed', key: 'wind_speed', selected: true, color: '#22d3ee' },
+    { label: 'Wind Direction', key: 'wind_direction', selected: true, color: '#6366f1' }
   ];
 
-  // Sample data for one day with 30-minute intervals (48 data points)
-  windData: any[] = [];
-  polarData: PolarAxis[] = [];
+  // Active analysis data
+  analysisData: any[] = [];
+  isLoading = false;
+
+  constructor(private api: ApiService, private cdr: ChangeDetectorRef, private conversionService: UnitConversionService) { }
 
   ngOnInit() {
-    this.generateSampleData();
-    setTimeout(() => {
-      this.updateChartDimensions();
-    }, 1000);
+    this.fetchAnalysisData();
   }
 
- @ViewChild('chartContainer') chartContainer!: ElementRef<HTMLDivElement>;
-chartWidth!:number;
-chartHeight!:number;
   ngAfterViewInit() {
-    const el = this.chartContainer.nativeElement;
-
-    const width = el.offsetWidth;
-    const height = el.offsetHeight ;
-    this.chartWidth = width;
-    this.chartHeight = height -10;
-
-    console.log('Width:', width);
-    console.log('Height:', height);
+    this.setupResizeObserver();
   }
 
-  generateSampleData() {
-    // Use reportData if available, otherwise use anemometerData
-    if (this.reportData && this.reportData.length > 0) {
-      this.windData = this.reportData.map((item: any) => ({
-        time: item.date,
-        speed: parseFloat(item.uv),
-        direction: (Math.random() * 360) // Calculate direction from UV and UY components
-      }));
+  private setupResizeObserver() {
+    if (this.chartContainer) {
+      this.resizeObserver = new ResizeObserver(entries => {
+        for (let entry of entries) {
+          const newWidth = entry.contentRect.width;
+          if (Math.abs(this.chartWidth - newWidth) > 20) {
+            this.chartWidth = newWidth - 48; // Adjust for padding
+            this.cdr.markForCheck();
+          }
+        }
+      });
+      this.resizeObserver.observe(this.chartContainer.nativeElement);
+    }
+  }
 
-      this.polarData = this.reportData.map((item: any) => ({
-        name: 'wind',
-        speed: item.uv,
-        direction: ((Math.atan2(parseFloat(item.uy), parseFloat(item.uv)) * 180 / Math.PI + 360) % 360).toString()
-      }));
-    } else if (this.anemometerData) {
-      // Use current anemometer data as fallback
-      const time = new Date();
-      const speed = Math.sqrt(
-        this.anemometerData.uv ** 2 + 
-        this.anemometerData.uy ** 2 + 
-        this.anemometerData.uz ** 2
-      );
-      const direction = (Math.atan2(this.anemometerData.uy, this.anemometerData.uv) * 180 / Math.PI + 360) % 360;
+  applyConversion(val: number, paramId: string): number {
+    const initialUnitObj = this.initialUnits.find(u => u.parameter_id === paramId);
+    const targetConfig = this.sensorConfigs.find(c => c.parameter_id === paramId);
 
-      this.windData = [{
-        time: time.toISOString(),
-        speed: speed,
-        direction: direction
-      }];
+    if (!initialUnitObj || !targetConfig) return val;
 
-      this.polarData = [{
-        name: 'wind',
-        speed: speed.toString(),
-        direction: direction.toString()
-      }];
-    } else {
-      // Fallback to sample data
-      const startDate = new Date();
-      startDate.setHours(0, 0, 0, 0);
+    return this.conversionService.convert(val, paramId, initialUnitObj.unit, targetConfig.unit);
+  }
 
-      this.windData = [];
-      this.polarData = [];
+  getParameterLabel(param: any): string {
+    const paramIdMap: { [key: string]: string } = {
+      'uv': 'wind_ux', 'uy': 'wind_uy', 'uz': 'wind_uz',
+      'rain': 'rain', 'temp': 'temp', 'solar': 'solar',
+      'humidity': 'humidity', 'pressure': 'pressure', 'battery': 'battery',
+      'wind_speed': 'wind_speed', 'wind_direction': 'wind_direction'
+    };
+    const paramId = paramIdMap[param.key];
+    const cfg = this.sensorConfigs.find(c => c.parameter_id === paramId);
+    return cfg ? `${param.label} (${cfg.unit})` : param.label;
+  }
 
-      for (let i = 0; i < 48; i++) {
-        const time = new Date(startDate.getTime() + i * 30 * 60 * 1000);
-        const baseSpeed = 8 + Math.sin(i / 4) * 3 + Math.random() * 2;
-        const speed = Math.max(0, baseSpeed);
-        const direction = (180 + Math.sin(i / 6) * 45 + Math.random() * 30) % 360;
+  async fetchAnalysisData() {
+    this.isLoading = true;
+    this.cdr.markForCheck();
 
-        this.windData.push({
-          time: time.toISOString(),
-          speed: speed,
-          direction: direction
-        });
+    try {
+      const { start, end } = this.getDateRange();
+      const rawData = await this.api.getFilteredWindData(start, end);
 
-        this.polarData.push({
-          name: 'wind',
-          speed: speed.toString(),
-          direction: direction.toString()
-        });
+      // Intelligent Downsampling for performance
+      const maxPoints = 500;
+      let processedData = rawData || [];
+      if (processedData.length > maxPoints) {
+        const step = Math.ceil(processedData.length / maxPoints);
+        processedData = processedData.filter((_, i) => i % step === 0);
       }
+
+      this.analysisData = processedData.map(item => ({
+        time: item.datetime,
+        uv: this.applyConversion(Number(item.wind_uv || 0), 'wind_ux'),
+        uy: this.applyConversion(Number(item.wind_uy || 0), 'wind_uy'),
+        uz: this.applyConversion(Number(item.wind_uz || 0), 'wind_uz'),
+        rain: this.applyConversion(Number(item.rain_fall || 0), 'rain'),
+        temp: this.applyConversion(Number(item.temp || 0), 'temp'),
+        solar: this.applyConversion(Number(item.solar_rad || 0), 'solar'),
+        humidity: this.applyConversion(Number(item.humidity || 0), 'humidity'),
+        pressure: this.applyConversion(Number(item.pressure || 0), 'pressure'),
+        battery: this.applyConversion(Number(item.battery || 0), 'battery'),
+        wind_speed: this.applyConversion(Number(item.wind_speed || 0), 'wind_speed'),
+        wind_direction: Number(item.wind_direction || 0)
+      }));
+
+    } catch (error) {
+      console.error('Error fetching analysis data:', error);
+      this.analysisData = [];
+    } finally {
+      this.isLoading = false;
+      this.cdr.detectChanges(); // Use detectChanges to ensure UI reflects state immediately
     }
   }
 
-  updateChartDimensions() {
-    if (this.leftChartContainer) {
-      const rect = this.leftChartContainer.nativeElement.getBoundingClientRect();
-      this.leftChartWidth = 1300;
-      this.leftChartHeight = 300; // Split height for two charts
+  getDateRange() {
+    const selected = this.selectedDate || new Date();
+    const y = selected.getFullYear();
+    const m = selected.getMonth();
+    const d = selected.getDate();
+
+    let start = new Date(y, m, d, 0, 0, 0, 0);
+    let end = new Date(y, m, d, 23, 59, 59, 999);
+
+    if (this.selectedTimeScale === 'Week') {
+      end.setDate(start.getDate() + 7);
+    } else if (this.selectedTimeScale === 'Month') {
+      start.setDate(1);
+      end = new Date(y, m + 1, 0, 23, 59, 59, 999);
+    } else if (this.selectedTimeScale === 'Year') {
+      start = new Date(y, 0, 1, 0, 0, 0, 0);
+      end = new Date(y, 11, 31, 23, 59, 59, 999);
     }
 
-    if (this.polarChartContainer) {
-      const rect = this.polarChartContainer.nativeElement.getBoundingClientRect();
-      this.polarChartWidth = 1300;
-      this.polarChartHeight = 300;
-    }
+    return {
+      start: this.api.formatDateForQuery(start),
+      end: this.api.formatDateForQuery(end)
+    };
   }
 
-  onTimeScaleChange(scale: string) {
-    this.selectedTimeScale = scale;
-    // In a real app, you would fetch data based on the selected time scale
-    console.log('Time scale changed to:', scale);
-    this.updateChartDimensions();
+  getChartData(key: string): any[] {
+    return this.analysisData.map(d => ({
+      time: d.time,
+      speed: d[key]
+    }));
   }
 
-  onDateChange(date: string) {
-    this.selectedDate = date;
-    // In a real app, you would fetch data for the selected date
-    console.log('Date changed to:', date);
-    this.updateChartDimensions();
-  }
 
-  onStationChange(event: Event) {
-    const target = event.target as HTMLSelectElement;
-    this.selectedStation = target.value;
-    // In a real app, you would fetch data for the selected station
-    console.log('Station changed to:', this.selectedStation);
-    this.updateChartDimensions();
-  }
-   toggleParameter(param: any): void {
+  onTimeScaleChange() { this.fetchAnalysisData(); }
+  onDateChange() { this.fetchAnalysisData(); }
+  onStationChange() { this.fetchAnalysisData(); }
+
+  toggleParameter(param: any): void {
     param.selected = !param.selected;
+    this.cdr.detectChanges();
   }
 
-  @HostListener('window:resize', ['$event'])
-  onResize(event: any) {
-    this.updateChartDimensions();
+  getSelectedParameters() {
+    return this.parameters.filter(p => p.selected);
   }
-ngOnDestroy(): void {
-    
-}
+
+  ngOnDestroy(): void {
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+    }
+  }
 }

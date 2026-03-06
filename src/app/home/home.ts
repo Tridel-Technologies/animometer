@@ -2,8 +2,12 @@ import { CommonModule } from '@angular/common';
 import { Component, Input, input, OnChanges, OnInit, SimpleChanges, OnDestroy, AfterViewInit, Renderer2, ChangeDetectorRef } from '@angular/core';
 import * as echarts from 'echarts';
 import Plotly from 'plotly.js-dist-min';
+import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { TabsModule } from 'primeng/tabs';
+import { SelectModule } from 'primeng/select';
+import { DialogModule } from 'primeng/dialog';
+import { ButtonModule } from 'primeng/button';
 import { Homeservice } from './homeService/homeservice';
 import { interval, Subscription } from 'rxjs';
 import { Dashboard } from './dashboard/dashboard';
@@ -11,7 +15,11 @@ import { Report } from './report/report';
 import { Analysis } from './analysis/analysis';
 import { Settings } from './settings/settings';
 import { Profile } from './profile/profile';
+import { Users } from './users/users';
 import { ApiService, WindData } from '../apiService/api-service';
+import { SocketService } from '../apiService/socket-service';
+import { UnitConversionService } from '../apiService/unit-conversion.service';
+import { ThemeService } from '../theme.service';
 
 interface AnemometerData {
   uv: number;
@@ -25,6 +33,8 @@ interface AnemometerData {
   humidity?: number;
   pressure?: number;
   battery?: number;
+  wind_speed?: number;
+  wind_direction?: number;
 }
 
 interface NavItem {
@@ -35,27 +45,49 @@ interface NavItem {
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, HttpClientModule, TabsModule, Dashboard, Report, Analysis, Settings, Profile],
+  imports: [CommonModule, HttpClientModule, FormsModule, TabsModule, SelectModule, Dashboard, Report, Analysis, Settings, Profile, Users, DialogModule, ButtonModule],
   templateUrl: './home.html',
 })
 export class Home implements OnInit, OnDestroy, AfterViewInit {
+  // Dual-scale trend buffers
+  fullDayTrends: { [key: string]: any[] } = {
+    wind_ux: [],
+    wind_uy: [],
+    wind_uz: []
+  };
 
   isDarkMode: boolean = true; // Start with light mode
   expandedSideBar: boolean = true;
+  lastDataTimestamp: number = 0;
 
- toggleTheme() {
-    console.log('clicked');
+  get systemStatus(): 'online' | 'partial' | 'offline' {
+    const now = Date.now();
+    if (this.lastDataTimestamp === 0) return 'offline';
 
-  this.isDarkMode = !this.isDarkMode;
+    const timeDiff = now - this.lastDataTimestamp;
+    if (timeDiff > 10000) return 'offline';
 
-  if (this.isDarkMode) {
-    this.renderer.addClass(document.documentElement, 'dark');
-  } else {
-    this.renderer.removeClass(document.documentElement, 'dark');
+    // Logic for "partial": if data is fresh but battery/pressure are exactly 0 (sensor failure marker)
+    // or if packet is slightly late (>5s)
+    const isPackatStale = timeDiff > 5000;
+    const isAnySensorFailing = (this.anemometerData?.battery === 0 || this.anemometerData?.pressure === 0);
+
+    if (isPackatStale || isAnySensorFailing) return 'partial';
+
+    return 'online';
   }
-}
-  activeIndex: number = 0;
-  selectedStation: string | null = null;
+
+  toggleTheme() {
+    this.themeService.toggleTheme();
+  }
+  activeIndex: number = 1;
+  selectedStation: string | null = 'Main Mast 01';
+  stations = [
+    { label: 'Main Mast 01', value: 'Main Mast 01' },
+    { label: 'Front Bridge 02', value: 'Front Bridge 02' },
+    { label: 'Port Side 03', value: 'Port Side 03' },
+    { label: 'Starboard Side 04', value: 'Starboard Side 04' }
+  ];
   scrollableTabs: any[] = [
     { title: 'Cam 1', content: 'Content of Tab 1' },
     { title: 'Cam 2', content: 'Content of Tab 2' },
@@ -69,21 +101,134 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
     this.expandedSideBar = !this.expandedSideBar;
   }
 
-  constructor(private station: Homeservice, private renderer: Renderer2, private apiService: ApiService, private cdr:ChangeDetectorRef) {
+  isInitialized = false;
+
+  constructor(
+    private station: Homeservice,
+    private renderer: Renderer2,
+    private apiService: ApiService,
+    private socketService: SocketService,
+    private cdr: ChangeDetectorRef,
+    private conversionService: UnitConversionService,
+    public themeService: ThemeService
+  ) {
+    this.themeService.isDarkMode$.subscribe(isDark => {
+      this.isDarkMode = isDark;
+      this.cdr.detectChanges();
+    });
     this.station.selectedStation$.subscribe(station => {
       this.selectedStation = station;
-      this.activeIndex = 0; // reset tabs when station changes
+      this.activeIndex = 1; // reset tabs when station changes
     });
   }
 
-  ngOnInit(): void {
+  showInitialUnitsDialog: boolean = false;
+  showStationDialog: boolean = false;
+  shipName: string = '';
+  initialUnits: any[] = [];
+  sensorConfigs: any[] = [];
+
+  async ngOnInit(): Promise<void> {
+    await this.checkStation();
+    await this.checkInitialUnits();
+    await this.fetchSensorConfigs();
+
+    // Now that we have units, initialize the widgets correctly
+    this.initializeWidgets();
+
     this.generateReportData();
     this.loadLatestWindData(); // Load latest wind data from API
 
-    // Simulate live data updates every 3 seconds
-    // this.dataSubscription = interval(10000).subscribe(() => {
-    //   this.loadLatestWindData(); // Refresh data from API
-    // });
+    this.isInitialized = true;
+    this.cdr.detectChanges();
+
+    // Listen for live WebSocket updates
+    const socketSub = this.socketService.onWindDataUpdate().subscribe((data) => {
+      this.lastDataTimestamp = Date.now();
+      // Only reflect updates in dashboard page as requested
+      if (this.activeTab === 'home') {
+        const dataDate = new Date(data.datetime);
+        const today = new Date();
+        const isToday = dataDate.getDate() === today.getDate() &&
+          dataDate.getMonth() === today.getMonth() &&
+          dataDate.getFullYear() === today.getFullYear();
+
+        if (isToday) {
+          // Update basic telemetry with converted values
+          this.anemometerData = {
+            uv: this.applyConversion(data.wind_uv, 'wind_ux'),
+            uy: this.applyConversion(data.wind_uy, 'wind_uy'),
+            uz: this.applyConversion(data.wind_uz, 'wind_uz'),
+            rain: this.applyConversion(data.rain_fall, 'rain'),
+            temp: this.applyConversion(data.temp, 'temp'),
+            solar: this.applyConversion(data.solar_rad, 'solar'),
+            lat: data.lat,
+            lon: data.lon,
+            humidity: this.applyConversion(data.humidity || 65, 'humidity'),
+            pressure: this.applyConversion(data.pressure || 1013.2, 'pressure'),
+            battery: this.applyConversion(data.battery || 92, 'battery'),
+            wind_speed: this.applyConversion(data.wind_speed || 0, 'wind_speed'),
+            wind_direction: data.wind_direction || 0
+          };
+
+          // Update persistent widgetData trends smoothly (5 MINUTE SLIDING WINDOW)
+          this._widgetData.forEach(w => {
+            if (w.id === 'wind_ux') w.val = this.applyConversion(data.wind_uv, 'wind_ux');
+            else if (w.id === 'wind_uy') w.val = this.applyConversion(data.wind_uy, 'wind_uy');
+            else if (w.id === 'wind_uz') w.val = this.applyConversion(data.wind_uz, 'wind_uz');
+            else if (w.id === 'humidity') w.val = this.applyConversion(data.humidity || 65, 'humidity');
+            else if (w.id === 'pressure') w.val = this.applyConversion(data.pressure || 1013.2, 'pressure');
+            else if (w.id === 'solar') w.val = this.applyConversion(data.solar_rad, 'solar');
+            else if (w.id === 'temp') w.val = this.applyConversion(data.temp, 'temp');
+            else if (w.id === 'rain') w.val = this.applyConversion(data.rain_fall, 'rain');
+            else if (w.id === 'battery') w.val = this.applyConversion(data.battery || 92, 'battery');
+            else if (w.id === 'wind_speed') w.val = this.applyConversion(data.wind_speed || 0, 'wind_speed');
+            else if (w.id === 'wind_direction') w.val = data.wind_direction || 0;
+            else if (w.id === 'gps') {
+              w.val = data.lat;
+              w.lat = data.lat;
+              w.lon = data.lon;
+            }
+
+            // Push to trend and maintain last 5 MINUTES (300 points at 1s intervals)
+            if (w.trend && w.id !== 'gps') {
+              w.trend.push(Number(w.val));
+              if (w.trend.length > 300) w.trend.shift();
+              w.trend = [...w.trend];
+            }
+          });
+
+          // Update FULL DAY trends for trajectory charts with timestamps
+          const timestamp = new Date().toISOString();
+          this.fullDayTrends['wind_ux'].push([timestamp, this.applyConversion(data.wind_uv, 'wind_ux')]);
+          this.fullDayTrends['wind_uy'].push([timestamp, this.applyConversion(data.wind_uy, 'wind_uy')]);
+          this.fullDayTrends['wind_uz'].push([timestamp, this.applyConversion(data.wind_uz, 'wind_uz')]);
+
+          // Keep only last 3600 points (1 hour if 1Hz, or adjust as needed)
+          if (this.fullDayTrends['wind_ux'].length > 3600) {
+            this.fullDayTrends['wind_ux'].shift();
+            this.fullDayTrends['wind_uy'].shift();
+            this.fullDayTrends['wind_uz'].shift();
+          }
+
+          // Trigger change detection for all subscribers
+          this.cdr.markForCheck();
+        }
+      }
+    });
+
+    this.initializeWidgets();
+
+    // Add to subscriptions for cleanup
+    if (this.dataSubscription) {
+      const originalUnsub = this.dataSubscription.unsubscribe.bind(this.dataSubscription);
+      this.dataSubscription.unsubscribe = () => {
+        originalUnsub();
+        socketSub.unsubscribe();
+      };
+    } else {
+      this.dataSubscription = socketSub;
+    }
 
     // Update time every second
     this.timeSubscription = interval(1000).subscribe(() => {
@@ -98,6 +243,132 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
   ngOnDestroy() {
     if (this.dataSubscription) this.dataSubscription.unsubscribe();
     if (this.timeSubscription) this.timeSubscription.unsubscribe();
+  }
+
+  // Mapping for parameter selections in dialog
+  initialUnitsSelection: any = {
+    'wind_ux': 'm/s',
+    'wind_uy': 'm/s',
+    'wind_uz': 'm/s',
+    'rain': 'mm',
+    'temp': '°C',
+    'solar': 'W/m²',
+    'humidity': '%RH',
+    'pressure': 'hPa',
+    'battery': 'V',
+    'wind_speed': 'm/s',
+    'wind_direction': '°'
+  };
+
+  unitOptionsMapping: { [key: string]: string[] } = {
+    'wind_ux': ['m/s', 'km/h', 'mph', 'knots (kt)', 'ft/s', 'cm/s'],
+    'wind_uy': ['m/s', 'km/h', 'mph', 'knots (kt)', 'ft/s', 'cm/s'],
+    'wind_uz': ['m/s', 'km/h', 'mph', 'knots (kt)', 'ft/s', 'cm/s'],
+    'rain': ['mm', 'cm', 'inch', 'mm/hr', 'inch/hr'],
+    'temp': ['°C', '°F', 'K (Kelvin)', '°R (Rankine)'],
+    'solar': ['W/m²', 'kW/m²', 'MJ/m²', 'cal/cm²/min', 'lux'],
+    'humidity': ['%RH', 'g/m³', 'kg/kg', 'g/kg', 'Pa (vapor pressure)'],
+    'pressure': ['hPa', 'mbar', 'Pa', 'kPa', 'atm', 'mmHg', 'inHg', 'bar'],
+    'battery': ['V', 'mV', '%', 'Ah', 'mAh', 'W'],
+    'wind_speed': ['m/s', 'km/h', 'mph', 'knots (kt)', 'ft/s', 'cm/s'],
+    'wind_direction': ['°']
+  };
+
+  async checkInitialUnits() {
+    try {
+      const units = await this.apiService.getInitialUnits();
+      if (units && units.length > 0) {
+        this.initialUnits = units;
+        // Map back to our selection object for potential editing later
+        units.forEach(u => {
+          this.initialUnitsSelection[u.parameter_id] = u.unit;
+        });
+      } else {
+        this.showInitialUnitsDialog = true;
+      }
+      this.cdr.detectChanges();
+    } catch (error) {
+      console.error('Error checking initial units:', error);
+    }
+  }
+
+  async checkStation() {
+    try {
+      const station = await this.apiService.getStation();
+      if (station) {
+        this.shipName = station.name;
+        this.selectedStation = station.name;
+        // Only show the registered station in the dropdown as requested
+        this.stations = [{ label: station.name, value: station.name }];
+        this.showStationDialog = false;
+      } else {
+        this.showStationDialog = true;
+      }
+      this.cdr.detectChanges();
+    } catch (error) {
+      console.error('Error checking station:', error);
+    }
+  }
+
+  async saveStation() {
+    if (!this.shipName.trim()) return;
+    try {
+      await this.apiService.updateStation(this.shipName);
+      this.showStationDialog = false;
+      this.selectedStation = this.shipName;
+      this.cdr.detectChanges();
+    } catch (error) {
+      console.error('Error saving station:', error);
+    }
+  }
+
+  async fetchSensorConfigs() {
+    try {
+      const [configs] = await Promise.all([
+        this.apiService.getSensorConfig(),
+        this.checkStation()
+      ]);
+      this.sensorConfigs = configs;
+      // Update widget units/labels
+      this.initializeWidgets();
+      // After configs changed, we need to refresh historical data to apply new units
+      this.generateReportData();
+      this.loadLatestWindData();
+      this.cdr.detectChanges();
+    } catch (error) {
+      console.error('Error fetching sensor configs:', error);
+    }
+  }
+
+  async saveInitialUnits() {
+    const unitsToSave = Object.keys(this.initialUnitsSelection).map(key => ({
+      parameter_id: key,
+      unit: this.initialUnitsSelection[key]
+    }));
+
+    try {
+      await this.apiService.updateInitialUnits(unitsToSave);
+      this.initialUnits = unitsToSave;
+      this.showInitialUnitsDialog = false;
+      this.fetchSensorConfigs(); // Refresh configs after saving units
+      this.cdr.detectChanges();
+    } catch (error) {
+      console.error('Error saving initial units:', error);
+    }
+  }
+
+  triggerInitialUnitsEdit() {
+    this.showInitialUnitsDialog = true;
+    this.cdr.detectChanges();
+  }
+
+  applyConversion(val: number, paramId: string): number {
+    const initialUnitObj = this.initialUnits.find(u => u.parameter_id === paramId);
+    const targetConfig = this.sensorConfigs.find(c => c.parameter_id === paramId);
+
+    if (!initialUnitObj || !targetConfig) return val;
+
+    return this.conversionService.convert(val, paramId, initialUnitObj.unit, targetConfig.unit);
   }
 
   dataSubscription: Subscription | undefined;
@@ -124,7 +395,9 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
     lon: 80.2707,
     humidity: 65,
     pressure: 1013.2,
-    battery: 92
+    battery: 92,
+    wind_speed: 12.4,
+    wind_direction: 45
   };
 
   // ...existing code...
@@ -145,28 +418,44 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
     { id: 'home', icon: 'fa-house', label: 'Dashboard' },
     { id: 'report', icon: 'fa-file-lines', label: 'Reports' },
     { id: 'analysis', icon: 'fa-chart-line', label: 'Analysis' },
+    { id: 'users', icon: 'fa-users-gear', label: 'User Management' },
     { id: 'settings', icon: 'fa-gear', label: 'Settings' },
     { id: 'profile', icon: 'fa-user', label: 'Profile' }
   ];
 
   // Report Column Visibility
   reportColumns = [
-    { label: 'Wind UV', key: 'uv', visible: true },
+    { label: 'Wind UX', key: 'uv', visible: true },
     { label: 'Wind UY', key: 'uy', visible: true },
     { label: 'Wind UZ', key: 'uz', visible: true },
-    { label: 'Rain (mm)', key: 'rain', visible: true },
-    { label: 'Temp (°C)', key: 'temp', visible: true },
-    { label: 'Solar (W/m²)', key: 'solar', visible: true }
+    { label: 'Rainfall', key: 'rain', visible: true },
+    { label: 'Temp', key: 'temp', visible: true },
+    { label: 'Solar Rad', key: 'solar', visible: true },
+    { label: 'Humidity', key: 'humidity', visible: true },
+    { label: 'Pressure', key: 'pressure', visible: true },
+    { label: 'Battery', key: 'battery', visible: true },
+    { label: 'Wind Speed', key: 'wind_speed', visible: true },
+    { label: 'Wind Direction', key: 'wind_direction', visible: true }
   ];
+
+  getReportColumnLabel(key: string): string {
+    const col = this.reportColumns.find(c => c.key === key);
+    if (!col) return key;
+
+    // Map key to parameter_id for lookup
+    const paramIdMap: { [key: string]: string } = {
+      'uv': 'wind_ux', 'uy': 'wind_uy', 'uz': 'wind_uz',
+      'rain': 'rain', 'temp': 'temp', 'solar': 'solar',
+      'humidity': 'humidity', 'pressure': 'pressure', 'battery': 'battery',
+      'wind_speed': 'wind_speed', 'wind_direction': 'wind_direction'
+    };
+
+    const paramId = paramIdMap[key];
+    const cfg = this.sensorConfigs.find(c => c.parameter_id === paramId);
+    return cfg ? `${col.label} (${cfg.unit})` : col.label;
+  }
 
   // Settings Thresholds
-  thresholds = [
-    { label: 'Temp Upper Limit', value: 45, unit: '°C' },
-    { label: 'Temp Lower Limit', value: 5, unit: '°C' },
-    { label: 'Wind Speed Limit', value: 25, unit: 'm/s' },
-    { label: 'Rainfall Alert', value: 10, unit: 'mm/h' }
-  ];
-
   // Profile Data
   currentUser = {
     name: 'Admin User',
@@ -189,23 +478,151 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
   // }
 
   async loadLatestWindData() {
-    const latestData = await this.apiService.getLatestWindData();
-    if (latestData) {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+
+    const startStr = this.apiService.formatDateForQuery(startOfDay);
+    const nowStr = this.apiService.formatDateForQuery(now);
+
+    const historicalData = await this.apiService.getFilteredWindData(startStr, nowStr);
+
+    if (historicalData.length > 0) {
+      // Data is ordered DESC, so index 0 is the latest
+      const latestData = historicalData[0];
+
       this.anemometerData = {
-        uv: latestData.wind_uv,
-        uy: latestData.wind_uy,
-        uz: latestData.wind_uz,
-        rain: latestData.rain_fall,
-        temp: latestData.temp,
-        solar: latestData.solar_rad,
+        uv: this.applyConversion(latestData.wind_uv, 'wind_ux'),
+        uy: this.applyConversion(latestData.wind_uy, 'wind_uy'),
+        uz: this.applyConversion(latestData.wind_uz, 'wind_uz'),
+        rain: this.applyConversion(latestData.rain_fall, 'rain'),
+        temp: this.applyConversion(latestData.temp, 'temp'),
+        solar: this.applyConversion(latestData.solar_rad, 'solar'),
         lat: latestData.lat,
         lon: latestData.lon,
-        humidity: 65,
-        pressure: 1013.2,
-        battery: 92
+        humidity: this.applyConversion(latestData.humidity || 65, 'humidity'),
+        pressure: this.applyConversion(latestData.pressure || 1013.2, 'pressure'),
+        battery: this.applyConversion(latestData.battery || 92, 'battery'),
+        wind_speed: this.applyConversion(latestData.wind_speed || 0, 'wind_speed'),
+        wind_direction: latestData.wind_direction || 0
       };
+
+      // Populate widgets with actual historical trends from today
+      this._widgetData.forEach(w => {
+        if (w.id === 'wind_ux') w.val = this.applyConversion(latestData.wind_uv, 'wind_ux');
+        else if (w.id === 'wind_uy') w.val = this.applyConversion(latestData.wind_uy, 'wind_uy');
+        else if (w.id === 'wind_uz') w.val = this.applyConversion(latestData.wind_uz, 'wind_uz');
+        else if (w.id === 'humidity') w.val = this.applyConversion(latestData.humidity || 65, 'humidity');
+        else if (w.id === 'pressure') w.val = this.applyConversion(latestData.pressure || 1013.2, 'pressure');
+        else if (w.id === 'solar') w.val = this.applyConversion(latestData.solar_rad, 'solar');
+        else if (w.id === 'temp') w.val = this.applyConversion(latestData.temp, 'temp');
+        else if (w.id === 'rain') w.val = this.applyConversion(latestData.rain_fall, 'rain');
+        else if (w.id === 'battery') w.val = this.applyConversion(latestData.battery || 92, 'battery');
+        else if (w.id === 'wind_speed') w.val = this.applyConversion(latestData.wind_speed || 0, 'wind_speed');
+        else if (w.id === 'wind_direction') w.val = latestData.wind_direction || 0;
+        else if (w.id === 'gps') { w.val = latestData.lat; w.lat = latestData.lat; w.lon = latestData.lon; }
+
+        if (w.trend && w.id !== 'gps') {
+          // Small Cards: Last 5 minutes (300 points)
+          const fiveMinHistory = historicalData.slice(0, 300).reverse();
+          w.trend = fiveMinHistory.map(item => {
+            if (w.id === 'wind_ux') return this.applyConversion(item.wind_uv, 'wind_ux');
+            if (w.id === 'wind_uy') return this.applyConversion(item.wind_uy, 'wind_uy');
+            if (w.id === 'wind_uz') return this.applyConversion(item.wind_uz, 'wind_uz');
+            if (w.id === 'humidity') return this.applyConversion(item.humidity || 65, 'humidity');
+            if (w.id === 'pressure') return this.applyConversion(item.pressure || 1013.2, 'pressure');
+            if (w.id === 'solar') return this.applyConversion(item.solar_rad, 'solar');
+            if (w.id === 'temp') return this.applyConversion(item.temp, 'temp');
+            if (w.id === 'rain') return this.applyConversion(item.rain_fall, 'rain');
+            if (w.id === 'battery') return this.applyConversion(item.battery || 92, 'battery');
+            if (w.id === 'wind_speed') return this.applyConversion(item.wind_speed || 0, 'wind_speed');
+            if (w.id === 'wind_direction') return item.wind_direction || 0;
+            return 0;
+          });
+
+          // Padding for visual consistency if day just started
+          while (w.trend.length < 20) {
+            w.trend.unshift(w.trend[0] || Number(w.val));
+          }
+        }
+      });
+
+      // Full Day Trends for Trajectory (All records from today, sorted chronologically)
+      const dayHistory = [...historicalData].reverse();
+      this.fullDayTrends = {
+        wind_ux: dayHistory.map(d => this.applyConversion(d.wind_uv, 'wind_ux')),
+        wind_uy: dayHistory.map(d => this.applyConversion(d.wind_uy, 'wind_uy')),
+        wind_uz: dayHistory.map(d => this.applyConversion(d.wind_uz, 'wind_uz'))
+      };
+
       this.cdr.markForCheck();
     }
+  }
+
+  getWeatherInfo() {
+    const data = this.anemometerData;
+    const uv = data.uv || 0;
+    const uy = data.uy || 0;
+    const uz = data.uz || 0;
+    const rain = data.rain || 0;
+    const solar = data.solar || 0;
+    const humidity = data.humidity || 0;
+    const temp = data.temp || 0;
+
+    const windSpeed = Math.sqrt(Math.pow(uv, 2) + Math.pow(uy, 2) + Math.pow(uz, 2));
+
+    let condition = "Fair";
+    let icon = "fa-sun";
+    let color = "text-yellow-400";
+    let glow = "rgba(250,204,21,0.5)";
+
+    // Priority based conditions
+    if (rain > 0 && windSpeed > 10) {
+      condition = "Stormy";
+      icon = "fa-cloud-showers-heavy";
+      color = "text-slate-600 dark:text-slate-400";
+      glow = "rgba(100,116,139,0.5)";
+    } else if (rain > 0) {
+      condition = "Rainy";
+      icon = "fa-cloud-rain";
+      color = "text-blue-400 dark:text-blue-500";
+      glow = "rgba(96,165,250,0.5)";
+    } else if (solar > 600) {
+      condition = "Clear";
+      icon = "fa-sun";
+      color = "text-yellow-400";
+      glow = "rgba(250,204,21,0.5)";
+    } else if (solar >= 250 && solar <= 600) {
+      condition = "Partly Cloudy";
+      icon = "fa-cloud-sun";
+      color = "text-yellow-500";
+      glow = "rgba(234,179,8,0.5)";
+    } else if (solar < 250 && humidity > 70) {
+      condition = "Cloudy";
+      icon = "fa-cloud";
+      color = "text-slate-400 dark:text-slate-300";
+      glow = "rgba(148,163,184,0.5)";
+    } else if (windSpeed > 8) {
+      condition = "Windy";
+      icon = "fa-wind";
+      color = "text-cyan-400 dark:text-cyan-300";
+      glow = "rgba(34,211,238,0.5)";
+    }
+
+    const tempUnit = this.sensorConfigs.find(c => c.parameter_id === 'temp')?.unit || '°C';
+    const windUnit = this.sensorConfigs.find(c => c.parameter_id === 'wind_ux')?.unit || 'm/s';
+
+    return {
+      condition,
+      temperature: temp,
+      tempUnit,
+      windSpeed: windSpeed.toFixed(1),
+      windUnit,
+      humidity: humidity,
+      pressure: data.pressure || 1013.2,
+      icon,
+      color,
+      glow
+    };
   }
 
   updateAnemometerData() {
@@ -229,21 +646,26 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
     try {
       const allWindData = await this.apiService.fetchWindData();
       
-      // Transform API data into report format
+      // Transform API data into report format with unit conversion
       this.reportData = allWindData.map(item => ({
-        date: new Date(item.datetime).toLocaleDateString('en-US', { 
-          month: 'short', 
-          day: 'numeric', 
+        date: new Date(item.datetime).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
           year: 'numeric',
           hour: '2-digit',
           minute: '2-digit'
         }),
-        uv: item.wind_uv.toFixed(2),
-        uy: item.wind_uy.toFixed(2),
-        uz: item.wind_uz.toFixed(2),
-        rain: item.rain_fall.toFixed(2),
-        temp: item.temp.toFixed(2),
-        solar: item.solar_rad.toFixed(2)
+        uv: Number(this.applyConversion(item.wind_uv || 0, 'wind_ux')).toFixed(2),
+        uy: Number(this.applyConversion(item.wind_uy || 0, 'wind_uy')).toFixed(2),
+        uz: Number(this.applyConversion(item.wind_uz || 0, 'wind_uz')).toFixed(2),
+        rain: Number(this.applyConversion(item.rain_fall || 0, 'rain')).toFixed(2),
+        temp: Number(this.applyConversion(item.temp || 0, 'temp')).toFixed(2),
+        solar: Number(this.applyConversion(item.solar_rad || 0, 'solar')).toFixed(2),
+        humidity: Number(this.applyConversion(item.humidity || 0, 'humidity')).toFixed(2),
+        pressure: Number(this.applyConversion(item.pressure || 0, 'pressure')).toFixed(2),
+        battery: Number(this.applyConversion(item.battery || 0, 'battery')).toFixed(2),
+        wind_speed: Number(this.applyConversion(item.wind_speed || 0, 'wind_speed')).toFixed(2),
+        wind_direction: Number(item.wind_direction || 0).toFixed(2)
       }));
       this.cdr.markForCheck();
     } catch (error) {
@@ -309,19 +731,32 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
 
   startedDate = '2025-11-15 09:42 UTC';
 
-  // Widget data example
-  get widgetData() {
-    return [
-      { id: 'wind_ux', icon: 'fa-wind', label: 'Wind UX', val: this.anemometerData.uv, unit: 'm/s', pct: 75, barColor: 'from-cyan-400 to-blue-500', trend: [1.3, 1.4, 1.2, 1.6, 2.0, 1.8, 1.5, 1.4, 1.3, 1.2] },
-      { id: 'wind_uy', icon: 'fa-wind', label: 'Wind UY', val: this.anemometerData.uy, unit: 'm/s', pct: 60, barColor: 'from-cyan-400 to-blue-500', trend: [6.8, 7.0, 7.2, 7.5, 8.0, 7.8, 7.5, 7.4, 7.4, 7.3] },
-      { id: 'wind_uz', icon: 'fa-wind', label: 'Wind UZ', val: this.anemometerData.uz, unit: 'm/s', pct: 85, barColor: 'from-cyan-400 to-blue-500', trend: [3.8, 4.0, 4.1, 4.2, 4.6, 4.8, 4.5, 4.4, 4.3, 4.3] },
-      { id: 'humidity', icon: 'fa-droplet', label: 'Humidity', val: this.anemometerData.humidity, unit: '%', pct: 65, barColor: 'from-blue-400 to-cyan-400', trend: [60, 61, 62, 63, 64, 66, 67, 66, 65, 65] },
-      { id: 'pressure', icon: 'fa-gauge-high', label: 'Pressure', val: this.anemometerData.pressure, unit: 'hPa', pct: 80, barColor: 'from-indigo-400 to-blue-500', trend: [1011, 1012, 1012, 1013, 1014, 1014, 1013, 1013, 1014, 1013.2] },
-      { id: 'solar', icon: 'fa-sun', label: 'Solar Rad', val: this.anemometerData.solar, unit: 'W/m²', pct: 90, barColor: 'from-yellow-400 to-orange-500', trend: [5.0, 8.0, 10.5, 12.0, 15.0, 16.5, 18.0, 16.0, 14.0, 14.5] },
-      { id: 'temp', icon: 'fa-temperature-half', label: 'Temp', val: this.anemometerData.temp, unit: '°C', pct: 65, barColor: 'from-orange-400 to-red-500', trend: [22.5, 22.8, 23.0, 23.3, 23.5, 23.8, 24.1, 24.0, 24.1, 24.1] },
-      { id: 'rain', icon: 'fa-cloud-rain', label: 'Rainfall', val: this.anemometerData.rain, unit: 'mm', pct: 0, barColor: 'from-blue-400 to-cyan-400', trend: [30, 35, 40, 50, 45, 40, 38, 42, 45, 43.1] },
-      { id: 'gps', icon: 'fa-location-dot', label: 'GPS Position', val: this.anemometerData.lat, lat: this.anemometerData.lat, lon: this.anemometerData.lon, unit: '', pct: 100, barColor: 'from-green-400 to-cyan-400', trend: [] },
-      { id: 'battery', icon: 'fa-battery-full', label: 'Battery', val: this.anemometerData.battery, unit: '%', pct: 92, barColor: 'from-emerald-400 to-green-500', trend: [100, 99, 98, 97, 96, 95, 94, 93, 92, 92] },
+  private _widgetData: any[] = [];
+  get widgetData() { return this._widgetData; }
+
+  initializeWidgets() {
+    const getUnit = (id: string) => this.sensorConfigs.find(c => c.parameter_id === id)?.unit || '';
+    const getThreshold = (id: string) => {
+      const cfg = this.sensorConfigs.find(c => c.parameter_id === id);
+      return {
+        has: cfg?.has_threshold ?? false,
+        val: cfg?.threshold_value ?? 0
+      };
+    };
+
+    this._widgetData = [
+      { id: 'wind_ux', icon: 'fa-wind', label: 'Wind UX', val: this.anemometerData.uv, unit: getUnit('wind_ux'), threshold: getThreshold('wind_ux'), pct: 75, barColor: 'from-cyan-400 to-blue-500', trend: Array(20).fill(this.anemometerData.uv) },
+      { id: 'wind_uy', icon: 'fa-wind', label: 'Wind UY', val: this.anemometerData.uy, unit: getUnit('wind_uy'), threshold: getThreshold('wind_uy'), pct: 60, barColor: 'from-cyan-400 to-blue-500', trend: Array(20).fill(this.anemometerData.uy) },
+      { id: 'wind_uz', icon: 'fa-wind', label: 'Wind UZ', val: this.anemometerData.uz, unit: getUnit('wind_uz'), threshold: getThreshold('wind_uz'), pct: 85, barColor: 'from-cyan-400 to-blue-500', trend: Array(20).fill(this.anemometerData.uz) },
+      { id: 'humidity', icon: 'fa-droplet', label: 'Humidity', val: this.anemometerData.humidity, unit: getUnit('humidity'), threshold: getThreshold('humidity'), pct: 65, barColor: 'from-blue-400 to-cyan-400', trend: Array(20).fill(this.anemometerData.humidity) },
+      { id: 'pressure', icon: 'fa-gauge-high', label: 'Pressure', val: this.anemometerData.pressure, unit: getUnit('pressure'), threshold: getThreshold('pressure'), pct: 80, barColor: 'from-indigo-400 to-blue-500', trend: Array(20).fill(this.anemometerData.pressure) },
+      { id: 'solar', icon: 'fa-sun', label: 'Solar Rad', val: this.anemometerData.solar, unit: getUnit('solar'), threshold: getThreshold('solar'), pct: 90, barColor: 'from-yellow-400 to-orange-500', trend: Array(20).fill(this.anemometerData.solar) },
+      { id: 'temp', icon: 'fa-temperature-half', label: 'Temp', val: this.anemometerData.temp, unit: getUnit('temp'), threshold: getThreshold('temp'), pct: 65, barColor: 'from-orange-400 to-red-500', trend: Array(20).fill(this.anemometerData.temp) },
+      { id: 'rain', icon: 'fa-cloud-rain', label: 'Rainfall', val: this.anemometerData.rain, unit: getUnit('rain'), threshold: getThreshold('rain'), pct: 0, barColor: 'from-blue-400 to-cyan-400', trend: Array(20).fill(this.anemometerData.rain) },
+      { id: 'gps', icon: 'fa-location-dot', label: 'GPS Position', val: this.anemometerData.lat, lat: this.anemometerData.lat, lon: this.anemometerData.lon, threshold: { has: false, val: 0 }, unit: '', pct: 100, barColor: 'from-green-400 to-cyan-400', trend: [] },
+      { id: 'battery', icon: 'fa-battery-full', label: 'Battery', val: this.anemometerData.battery, unit: getUnit('battery'), threshold: getThreshold('battery'), pct: 92, barColor: 'from-emerald-400 to-green-500', trend: Array(20).fill(this.anemometerData.battery) },
+      { id: 'wind_speed', icon: 'fa-gauge-high', label: 'Wind Speed', val: this.anemometerData.wind_speed, unit: getUnit('wind_speed'), threshold: getThreshold('wind_speed'), pct: 70, barColor: 'from-blue-400 to-cyan-400', trend: Array(20).fill(this.anemometerData.wind_speed) },
+      { id: 'wind_direction', icon: 'fa-compass', label: 'Wind Direction', val: this.anemometerData.wind_direction, unit: getUnit('wind_direction'), threshold: { has: false, val: 0 }, pct: 100, barColor: 'from-indigo-400 to-blue-500', trend: Array(20).fill(this.anemometerData.wind_direction) },
     ];
   }
 }

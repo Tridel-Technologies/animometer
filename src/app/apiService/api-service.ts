@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { lastValueFrom } from 'rxjs';
 
 
 export interface WindData {
@@ -13,6 +14,11 @@ export interface WindData {
   lat: number;
   lon: number;
   datetime: string; // ISO timestamp from backend
+  humidity?: number;
+  pressure?: number;
+  battery?: number;
+  wind_speed?: number;
+  wind_direction?: number;
 }
 
 @Injectable({
@@ -27,12 +33,34 @@ export class ApiService {
     return `${this.baseUrl}/${endpoint}`;
   }
 
-  async fetchWindData():Promise<WindData[]> {
+  formatDateForQuery(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    const h = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    const s = String(date.getSeconds()).padStart(2, '0');
+    return `${y}-${m}-${d} ${h}:${min}:${s}`;
+  }
+
+  async fetchWindData(): Promise<WindData[]> {
     try {
-      const response = await this.http.get<WindData[]>(this.getApiUrl('wind-data')).toPromise();
+      const response = await lastValueFrom(this.http.get<WindData[]>(this.getApiUrl('wind-data')));
       return response || [];
     } catch (error) {
       console.error('Error fetching wind data:', error);
+      return [];
+    }
+  }
+
+  async getFilteredWindData(startDate: string, endDate: string): Promise<WindData[]> {
+    try {
+      const response = await lastValueFrom(
+        this.http.get<WindData[]>(`${this.getApiUrl('wind-data')}?startDate=${startDate}&endDate=${endDate}`)
+      );
+      return response || [];
+    } catch (error) {
+      console.error('Error fetching filtered wind data:', error);
       return [];
     }
   }
@@ -48,5 +76,83 @@ export class ApiService {
       console.error('Error fetching latest wind data:', error);
       return null;
     }
+  }
+
+  // User Management
+  getUsers(): Promise<any[]> {
+    return lastValueFrom(this.http.get<any[]>(this.getApiUrl('users'))).then(res => res || []);
+  }
+
+  createUser(user: any): Promise<any> {
+    return lastValueFrom(this.http.post<any>(this.getApiUrl('users'), user));
+  }
+
+  updateUser(id: number, user: any): Promise<any> {
+    return lastValueFrom(this.http.put<any>(this.getApiUrl('users/' + id), user));
+  }
+
+  deleteUser(id: number): Promise<any> {
+    return lastValueFrom(this.http.delete<any>(this.getApiUrl('users/' + id)));
+  }
+
+  // Roles
+  getRoles(): Promise<any[]> {
+    return lastValueFrom(this.http.get<any[]>(this.getApiUrl('roles'))).then(res => res || []);
+  }
+
+  createRole(role: any): Promise<any> {
+    return lastValueFrom(this.http.post<any>(this.getApiUrl('roles'), role));
+  }
+
+  updateRole(id: number, role: any): Promise<any> {
+    return lastValueFrom(this.http.put<any>(this.getApiUrl('roles/' + id), role));
+  }
+
+  deleteRole(id: number): Promise<any> {
+    return lastValueFrom(this.http.delete<any>(this.getApiUrl('roles/' + id)));
+  }
+
+  // Designations
+  getDesignations(): Promise<any[]> {
+    return lastValueFrom(this.http.get<any[]>(this.getApiUrl('designations'))).then(res => res || []);
+  }
+
+  createDesignation(designation: any): Promise<any> {
+    return lastValueFrom(this.http.post<any>(this.getApiUrl('designations'), designation));
+  }
+
+  updateDesignation(id: number, designation: any): Promise<any> {
+    return lastValueFrom(this.http.put<any>(this.getApiUrl('designations/' + id), designation));
+  }
+
+  deleteDesignation(id: number): Promise<any> {
+    return lastValueFrom(this.http.delete<any>(this.getApiUrl('designations/' + id)));
+  }
+
+  // Sensor Config
+  getSensorConfig(): Promise<any[]> {
+    return lastValueFrom(this.http.get<any[]>(this.getApiUrl('sensor-config'))).then(res => res || []);
+  }
+
+  updateSensorConfig(configs: any[]): Promise<any> {
+    return lastValueFrom(this.http.post<any>(this.getApiUrl('sensor-config'), { configs }));
+  }
+
+  // Initial Units
+  getInitialUnits(): Promise<any[]> {
+    return lastValueFrom(this.http.get<any[]>(this.getApiUrl('initial-units'))).then(res => res || []);
+  }
+
+  updateInitialUnits(units: any[]): Promise<any> {
+    return lastValueFrom(this.http.post<any>(this.getApiUrl('initial-units'), { units }));
+  }
+
+  // Station Management
+  getStation(): Promise<any> {
+    return lastValueFrom(this.http.get<any>(this.getApiUrl('station'))).then(res => res || null);
+  }
+
+  updateStation(name: string, parameters_list: any[] = []): Promise<any> {
+    return lastValueFrom(this.http.post<any>(this.getApiUrl('station'), { name, parameters_list }));
   }
 }

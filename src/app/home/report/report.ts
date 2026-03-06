@@ -1,5 +1,15 @@
-import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ApiService } from '../../apiService/api-service';
+import { UnitConversionService } from '../../apiService/unit-conversion.service';
+import * as XLSX from 'xlsx';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
+// PrimeNG v21 Module Imports
+import { DatePickerModule } from 'primeng/datepicker';
+import { SelectButtonModule } from 'primeng/selectbutton';
 
 interface ReportColumn {
   label: string;
@@ -10,19 +20,47 @@ interface ReportColumn {
 @Component({
   selector: 'app-report',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule, DatePickerModule, SelectButtonModule],
   templateUrl: './report.html',
-  styleUrl: './report.css',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  styleUrl: './report.css'
 })
-export class Report {
-  @Input() reportData: any[] = [];
-  @Input() reportColumns: ReportColumn[] = [];
+export class Report implements OnInit {
+  @Input() initialUnits: any[] = [];
+  @Input() sensorConfigs: any[] = [];
+  reportData: any[] = [];
+  reportColumns: ReportColumn[] = [
+    { label: 'Wind speed', key: 'uv', visible: true },
+    { label: 'Wind UY', key: 'uy', visible: true },
+    { label: 'Wind UZ', key: 'uz', visible: true },
+    { label: 'Rain (mm)', key: 'rain', visible: true },
+    { label: 'Temp (°C)', key: 'temp', visible: true },
+    { label: 'Solar (W/m²)', key: 'solar', visible: true },
+    { label: 'Humidity (%)', key: 'humidity', visible: true },
+    { label: 'Pressure (hPa)', key: 'pressure', visible: true },
+    { label: 'Battery (%)', key: 'battery', visible: true },
+    { label: 'Wind Speed', key: 'wind_speed', visible: true },
+    { label: 'Wind Direction', key: 'wind_direction', visible: true }
+  ];
 
   selectedTimeScale: string = 'Day';
+  selectedDate: Date = new Date();
+  timeScales = [
+    { label: 'Day', value: 'Day' },
+    { label: 'Week', value: 'Week' },
+    { label: 'Month', value: 'Month' },
+    { label: 'Year', value: 'Year' }
+  ];
+
+  isLoading = false;
   currentPage: number = 1;
   itemsPerPage: number = 10;
   itemsPerPageOptions: number[] = [10, 15, 20];
+
+  constructor(private api: ApiService, private cdr: ChangeDetectorRef, private conversionService: UnitConversionService) { }
+
+  ngOnInit(): void {
+    this.fetchData();
+  }
 
   get paginatedData(): any[] {
     const startIndex = (this.currentPage - 1) * this.itemsPerPage;
@@ -31,73 +69,184 @@ export class Report {
   }
 
   get totalPages(): number {
-    return Math.ceil(this.reportData.length / this.itemsPerPage);
+    return Math.max(1, Math.ceil(this.reportData.length / this.itemsPerPage));
   }
 
   get pageNumbers(): number[] {
     const pages = [];
-    for (let i = 1; i <= this.totalPages; i++) {
-      pages.push(i);
+    const maxVisible = 5;
+    let start = Math.max(1, this.currentPage - 2);
+    let end = Math.min(this.totalPages, start + maxVisible - 1);
+
+    if (end - start < maxVisible - 1) {
+      start = Math.max(1, end - maxVisible + 1);
     }
+
+    for (let i = start; i <= end; i++) pages.push(i);
     return pages;
   }
 
-  setTimeScale(scale: string) {
-    this.selectedTimeScale = scale;
-    this.currentPage = 1; // Reset to first page
+  onDateChange() {
+    this.currentPage = 1;
+    this.fetchData();
   }
 
-  setItemsPerPage(items: number) {
-    this.itemsPerPage = items;
-    this.currentPage = 1; // Reset to first page
+  applyConversion(val: number, paramId: string): number {
+    const initialUnitObj = this.initialUnits.find(u => u.parameter_id === paramId);
+    const targetConfig = this.sensorConfigs.find(c => c.parameter_id === paramId);
+
+    if (!initialUnitObj || !targetConfig) return val;
+
+    return this.conversionService.convert(val, paramId, initialUnitObj.unit, targetConfig.unit);
   }
 
-  goToPage(page: number) {
-    if (page >= 1 && page <= this.totalPages) {
-      this.currentPage = page;
+  getColumnLabel(col: ReportColumn): string {
+    const paramIdMap: { [key: string]: string } = {
+      'uv': 'wind_ux', 'uy': 'wind_uy', 'uz': 'wind_uz',
+      'rain': 'rain', 'temp': 'temp', 'solar': 'solar',
+      'humidity': 'humidity', 'pressure': 'pressure', 'battery': 'battery',
+      'wind_speed': 'wind_speed', 'wind_direction': 'wind_direction'
+    };
+    const paramId = paramIdMap[col.key];
+    const cfg = this.sensorConfigs.find(c => c.parameter_id === paramId);
+    return cfg ? `${col.label} (${cfg.unit})` : col.label;
+  }
+
+  async fetchData() {
+    this.isLoading = true;
+    this.cdr.markForCheck();
+
+    try {
+      const { start, end } = this.getDateRange();
+      const data = await this.api.getFilteredWindData(start, end);
+
+      this.reportData = data.map(item => ({
+        date: new Date(item.datetime).toLocaleString('en-US', {
+          month: 'short', day: 'numeric', year: 'numeric'
+        }),
+        time: new Date(item.datetime).toLocaleTimeString('en-US', {
+          hour: '2-digit', minute: '2-digit', hour12: false
+        }),
+        uv: Number(this.applyConversion(item.wind_uv || 0, 'wind_ux')).toFixed(2),
+        uy: Number(this.applyConversion(item.wind_uy || 0, 'wind_uy')).toFixed(2),
+        uz: Number(this.applyConversion(item.wind_uz || 0, 'wind_uz')).toFixed(2),
+        rain: Number(this.applyConversion(item.rain_fall || 0, 'rain')).toFixed(2),
+        temp: Number(this.applyConversion(item.temp || 0, 'temp')).toFixed(2),
+        solar: Number(this.applyConversion(item.solar_rad || 0, 'solar')).toFixed(2),
+        humidity: Number(this.applyConversion(item.humidity || 0, 'humidity')).toFixed(2),
+        pressure: Number(this.applyConversion(item.pressure || 0, 'pressure')).toFixed(2),
+        battery: Number(this.applyConversion(item.battery || 0, 'battery')).toFixed(2),
+        wind_speed: Number(this.applyConversion(item.wind_speed || 0, 'wind_speed')).toFixed(2),
+        wind_direction: Number(item.wind_direction || 0).toFixed(2)
+      }));
+
+    } catch (err) {
+      console.error('Fetch error:', err);
+    } finally {
+      this.isLoading = false;
+      this.cdr.markForCheck();
     }
   }
 
-  nextPage() {
-    if (this.currentPage < this.totalPages) {
-      this.currentPage++;
+  getDateRange() {
+    const selected = this.selectedDate || new Date();
+    const y = selected.getFullYear();
+    const m = selected.getMonth();
+    const d = selected.getDate();
+
+    let start = new Date(y, m, d, 0, 0, 0, 0);
+    let end = new Date(y, m, d, 23, 59, 59, 999);
+
+    if (this.selectedTimeScale === 'Week') {
+      end.setDate(start.getDate() + 7);
+    } else if (this.selectedTimeScale === 'Month') {
+      start.setDate(1);
+      end = new Date(y, m + 1, 0, 23, 59, 59, 999);
+    } else if (this.selectedTimeScale === 'Year') {
+      start = new Date(y, 0, 1, 0, 0, 0, 0);
+      end = new Date(y, 11, 31, 23, 59, 59, 999);
     }
+
+    return {
+      start: this.api.formatDateForQuery(start),
+      end: this.api.formatDateForQuery(end)
+    };
   }
 
-  prevPage() {
-    if (this.currentPage > 1) {
-      this.currentPage--;
-    }
+  exportExcel() {
+    const visibleCols = this.reportColumns.filter(c => c.visible);
+    const exportData = this.reportData.map(row => {
+      const obj: any = { 'Timestamp': `${row.date} ${row.time}` };
+      visibleCols.forEach(c => obj[this.getColumnLabel(c)] = row[c.key]);
+      return obj;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Marine Report');
+    XLSX.writeFile(workbook, `marine_report_${this.selectedDate}.xlsx`);
   }
 
-  toggleColumn(key: string) {
-    const col = this.reportColumns.find(c => c.key === key);
-    if (col) col.visible = !col.visible;
+  exportPDF() {
+    const doc = new jsPDF('l', 'mm', 'a4');
+    const visibleCols = this.reportColumns.filter(c => c.visible);
+
+    doc.setFontSize(18);
+    doc.text('Marine Environmental Report', 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Scale: ${this.selectedTimeScale} | Date: ${this.selectedDate}`, 14, 22);
+
+    const headers = ['Timestamp', ...visibleCols.map(c => this.getColumnLabel(c))];
+    const data = this.reportData.map(row => [`${row.date} ${row.time}`, ...visibleCols.map(c => row[c.key])]);
+
+    autoTable(doc, {
+      startY: 30,
+      head: [headers],
+      body: data,
+      theme: 'grid',
+      headStyles: { fillColor: [37, 99, 235], fontSize: 8 },
+      bodyStyles: { fontSize: 8 },
+      margin: { top: 30 }
+    });
+
+    doc.save(`marine_report_${this.selectedDate}.pdf`);
   }
 
   exportCSV() {
-    // Simple CSV export
-    const headers = this.reportColumns.filter(c => c.visible).map(c => c.label).join(',');
+    const visibleCols = this.reportColumns.filter(c => c.visible);
+    const headers = ['Timestamp', ...visibleCols.map(c => this.getColumnLabel(c))].join(',');
     const rows = this.reportData.map(row => 
-      this.reportColumns.filter(c => c.visible).map(c => row[c.key]).join(',')
+      [`"${row.date} ${row.time}"`, ...visibleCols.map(c => row[c.key])].join(',')
     ).join('\n');
-    const csv = headers + '\n' + rows;
-    const blob = new Blob([csv], { type: 'text/csv' });
+
+    const blob = new Blob([headers + '\n' + rows], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'report.csv';
+    a.download = `marine_report_${this.selectedDate}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
   }
 
-  exportExcel() {
-    // Placeholder for Excel export
-    alert('Excel export not implemented yet');
+  toggleColumn(key: string) {
+    const col = this.reportColumns.find(c => c.key === key);
+    if (col) {
+      col.visible = !col.visible;
+      this.cdr.markForCheck();
+    }
   }
 
-  exportPDF() {
-    // Placeholder for PDF export
-    alert('PDF export not implemented yet');
+  setItemsPerPage(n: number) {
+    this.itemsPerPage = n;
+    this.currentPage = 1;
+    this.cdr.markForCheck();
   }
+
+  goToPage(p: number) {
+    this.currentPage = p;
+    this.cdr.markForCheck();
+  }
+
+  prevPage() { if (this.currentPage > 1) this.currentPage--; }
+  nextPage() { if (this.currentPage < this.totalPages) this.currentPage++; }
 }

@@ -1,55 +1,221 @@
-<div class="flex-1 flex gap-5 min-h-0">
-    <!-- Threshold Configuration -->
-    <div
-        class="flex-1 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 shadow-sm flex flex-col gap-8">
-        <div class="flex items-center gap-4">
-            <i class="fa-solid fa-sliders text-blue-600 text-2xl"></i>
-            <h2 class="text-xl font-bold text-slate-900 dark:text-white">Parameter Thresholds</h2>
-        </div>
-        <div class="grid grid-cols-2 gap-6">
-            <div *ngFor="let t of thresholds"
-                class="p-6 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
-                <label class="text-sm font-black text-slate-400 uppercase tracking-widest block mb-3">{{
-                    t.label }}</label>
-                <div class="flex items-center gap-4">
-                    <input type="number" [value]="t.value"
-                        class="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-lg font-bold text-base outline-none focus:ring-2 focus:ring-blue-500">
-                    <span class="text-base font-bold text-slate-500">{{ t.unit }}</span>
-                </div>
-            </div>
-        </div>
-        <button
-            class="mt-auto px-8 py-4 rounded-xl bg-blue-600 text-white font-black uppercase tracking-widest text-sm hover:bg-blue-700 transition-all">
-            Save Configuration
-        </button>
-    </div>
+<p-toast></p-toast>
 
-    <!-- Station Settings -->
+<div class="flex flex-col h-full w-full bg-slate-50/50 dark:bg-slate-900/50 p-4 lg:p-6 overflow-hidden">
+    <!-- Header -->
     <div
-        class="w-1/3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 shadow-sm flex flex-col gap-8">
+        class="flex items-center justify-between mb-6 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md p-5 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl shadow-slate-200/50 dark:shadow-none">
         <div class="flex items-center gap-4">
-            <i class="fa-solid fa-satellite-dish text-blue-600 text-2xl"></i>
-            <h2 class="text-xl font-bold text-slate-900 dark:text-white">Station Settings</h2>
-        </div>
-        <div class="flex flex-col gap-6">
-            <div class="flex flex-col gap-2">
-                <label class="text-sm font-black text-slate-400 uppercase tracking-widest">Selected
-                    Station</label>
-                <select
-                    class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-4 rounded-xl font-bold text-base outline-none">
-                    <option>Main Mast 01</option>
-                    <option>Front Bridge 02</option>
-                </select>
+            <div class="w-11 h-11 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                <i class="fa-solid fa-gear text-white text-lg"></i>
             </div>
-            <div class="flex flex-col gap-2">
-                <label class="text-sm font-black text-slate-400 uppercase tracking-widest">Sync
-                    Interval</label>
-                <select
-                    class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-4 rounded-xl font-bold text-base outline-none">
-                    <option>Every 5 Seconds</option>
-                    <option>Every 30 Seconds</option>
-                    <option>Every 1 Minute</option>
-                </select>
+            <div>
+                <h1 class="text-xl font-black text-slate-800 dark:text-white leading-tight">System Configuration</h1>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Manage your maritime infrastructure</p>
+            </div>
+            </div>
+        <div class="flex items-center gap-2">
+            <p-button (onClick)="saveConfiguration()" label="Apply Changes" icon="fa-solid fa-check"
+                styleClass="p-button-sm shadow-lg shadow-indigo-500/20"></p-button>
+        </div>
+    </div>
+    
+    <div class="flex flex-1 gap-6 overflow-hidden">
+        <!-- Vertical Navigation Sidebar -->
+        <div
+            class="w-64 flex flex-col gap-2 p-2 bg-white/50 dark:bg-slate-800/50 rounded-3xl border border-slate-200 dark:border-slate-700 h-fit">
+            <button (click)="activeSection = 'station'"
+                [class]="activeSection === 'station' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'"
+                class="flex items-center gap-3 p-4 rounded-2xl transition-all duration-300 group">
+                <i class="fa-solid fa-ship" [class.text-white]="activeSection === 'station'"></i>
+                <span class="text-xs font-black uppercase tracking-widest">Station Identity</span>
+            </button>
+            <button (click)="activeSection = 'sensors'"
+                [class]="activeSection === 'sensors' ? 'bg-indigo-600 text white shadow-lg shadow-indigo-500/30' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'"
+                class="flex items-center gap-3 p-4 rounded-2xl transition-all duration-300 group">
+                <i class="fa-solid fa-microchip" [class.text-white]="activeSection === 'sensors'"></i>
+                <span class="text-xs font-black  uppercase tracking-widest">Sensor Parameters</span>
+            </button>
+            <button (click)="activeSection = 'appearance'"
+                [class]="activeSection === 'appearance' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'"
+                class="flex items-center gap-3 p-4 rounded-2xl transition-all duration-300 group">
+                <i class="fa-solid fa-palette" [class.text-white]="activeSection === 'appearance'"></i>
+                <span class="text-xs font-black uppercase tracking-widest">Appearance</span>
+            </button>
+            
+            <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 px-2">
+                <p-button (onClick)="onEditInitialUnits.emit()" label="Edit Source Baseline" icon="fa-solid fa-wrench"
+                    styleClass="p-button-text p-button-sm w-full text-left font-black !text-[9px] uppercase tracking-tighter"></p-button>
+            </div>
+        </div>
+
+        <!-- Section Content Area -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar pr-2">
+        
+            <!-- Global Loading Indicator -->
+            <div *ngIf="isLoading" class="flex flex-col items-center justify-center py-20 gap-4">
+                <div class="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin shadow-lg">
+                </div>
+                <span class="text-xs font-black text-indigo-600 uppercase tracking-[0.3em]">Synchronizing Registry...</span>
+            </div>
+        
+            <div *ngIf="!isLoading">
+                <!-- 1. Station Identity Section -->
+                <div *ngIf="activeSection === 'station'"
+                    class="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div
+                        class="bg-white dark:bg-slate-800 rounded-3xl p-8 border border-slate-200 dark:border-slate-700 shadow-sm">
+                        <div class="flex items-center gap-4 mb-8">
+                            <div
+                                class="w-14 h-14 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                                <i class="fa-solid fa-ship text-2xl"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-lg font-black text-slate-800 dark:text-white">Station Identity</h2>
+                                <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Registry & Localization
+                                </p>
+                            </div>
+                        </div>
+        
+                        <div class="flex flex-col gap-3 max-w-xl">
+                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Vessel Name /
+                                Station ID</label>
+                            <div class="relative group">
+                                <i
+                                    class="fa-solid fa-anchor absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-600 group-focus-within:text-blue-500 transition-colors"></i>
+                                <input type="text" [(ngModel)]="stationName" placeholder="e.g. MV NORTHERN STAR"
+                                    class="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl py-4 pl-12 pr-6 text-base font-black text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all shadow-inner">
+                            </div>
+                            <p class="text-[9px] text-slate-400 font-bold italic mt-1 ml-1 leading-relaxed">
+                                <i class="fa-solid fa-circle-info mr-1"></i>
+                                Updating this name will re-map all historical and future telemetry to this identifier.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+        
+                <!-- 2. Sensor Settings Section -->
+                <div *ngIf="activeSection === 'sensors'"
+                    class="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div *ngFor="let cfg of configs"
+                            class="group flex flex-col gap-5 p-6 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-lg hover:border-indigo-500/30 transition-all duration-300">
+        
+                            <!-- Parameter Header -->
+                            <div class="flex items-center justify-between">
+                                <div class="flex flex-col">
+                                    <span
+                                        class="text-[9px] font-black text-indigo-500 uppercase tracking-tighter mb-0.5">Telemetry
+                                        Field</span>
+                                    <h3 class="text-sm font-black text-slate-800 dark:text-white truncate">
+                                        {{cfg.parameter_name}}</h3>
+                                </div>
+                                <p-toggleswitch [(ngModel)]="cfg.has_threshold"
+                                    pTooltip="Enable Threshold Alert"></p-toggleswitch>
+                            </div>
+                            <div class="h-px w-full bg-slate-100 dark:bg-slate-700/50"></div>
+                            
+                            <div class="flex flex-col gap-4">
+                                <div class="flex flex-col gap-2">
+                                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Display Unit</label>
+                                    <p-select [options]="cfg.unitOptions" [(ngModel)]="cfg.unit" class="w-full" appendTo="body"
+                                        styleClass="w-full !rounded-xl !border-slate-200 dark:!border-slate-700 !bg-slate-50 dark:!bg-slate-900/50 !text-xs font-bold"></p-select>
+                                    </div>
+
+                                <div class="flex flex-col gap-2">
+                                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest" [class.opacity-30]="!cfg.has_threshold">
+                                        Alert Trigger ({{cfg.has_threshold ? 'Active' : 'Disabled'}})
+                                    </label>
+                                    <p-inputnumber [(ngModel)]="cfg.threshold_value" [disabled]="!cfg.has_threshold" mode="decimal" [minFractionDigits]="1"
+                                        [maxFractionDigits]="3" styleClass="w-full"
+                                        inputStyleClass="w-full !rounded-xl !bg-slate-50 dark:!bg-slate-900/50 !font-mono !font-black !text-indigo-600 dark:!text-indigo-400 !border-slate-200 dark:!border-slate-700">
+                                    </p-inputnumber>
+                                    </div>
+                                    </div>
+                                    
+                                    <div class="mt-2 flex items-center justify-between">
+                                        <div *ngIf="!cfg.has_threshold" class="flex items-center gap-1.5 text-slate-400">
+                                            <i class="fa-solid fa-moon text-[10px]"></i>
+                                            <span class="text-[9px] font-black uppercase">Monitoring Only</span>
+                                        </div>
+                                        <div *ngIf="cfg.has_threshold" class="flex items-center gap-1.5" [class.text-emerald-500]="cfg.threshold_value">
+                                            <i class="fa-solid fa-bell text-[10px] animate-pulse"></i>
+                                            <span class="text-[9px] font-black uppercase tracking-tighter">Warning at > {{cfg.threshold_value}}
+                                                {{cfg.unit}}</span>
+                                        </div>
+                                    </div>
+                                    </div>
+                                    </div>
+                                    </div>
+                                    
+                                    <!-- 3. Appearance Section -->
+                                    <div *ngIf="activeSection === 'appearance'"
+                                        class="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                        <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 border border-slate-200 dark:border-slate-700 shadow-sm">
+                                            <div class="flex items-center gap-4 mb-8">
+                                                <div
+                                                    class="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                                                    <i class="fa-solid fa-palette text-2xl"></i>
+                                                </div>
+                                                <div>
+                                                    <h2 class="text-lg font-black text-slate-800 dark:text-white">Interface Aesthetics</h2>
+                                                    <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Visual Style & Theme</p>
+                                                </div>
+                                            </div>
+                                    
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl">
+                                                <!-- Theme Toggle Card -->
+                                                <div
+                                                    class="flex flex-col gap-5 p-6 rounded-3xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700">
+                                                    <div class="flex items-center justify-between">
+                                                        <div class="flex flex-col gap-1">
+                                                            <span class="text-sm font-black text-slate-800 dark:text-white">Theme Mode</span>
+                                                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Toggle Light & Dark
+                                                                interface</span>
+                                                        </div>
+                                                        <div class="flex items-center gap-3">
+                                                            <i class="fa-solid fa-sun text-amber-500" [class.opacity-30]="themeService.currentTheme"></i>
+                                                            <p-toggleswitch [ngModel]="themeService.currentTheme"
+                                                                (ngModelChange)="themeService.toggleTheme()"></p-toggleswitch>
+                                                            <i class="fa-solid fa-moon text-indigo-400" [class.opacity-30]="!themeService.currentTheme"></i>
+                                                        </div>
+                                                    </div>
+                                    
+                                                    <div class="flex gap-4 mt-2">
+                                                        <div class="flex-1 aspect-video rounded-xl bg-white border-2 border-slate-200 flex flex-col gap-2 p-2 shadow-sm"
+                                                            [class.ring-2]="!themeService.currentTheme"
+                                                            [class.ring-indigo-500]="!themeService.currentTheme">
+                                                            <div class="w-1/2 h-2 bg-slate-100 rounded"></div>
+                                                            <div class="w-full h-8 bg-slate-50 rounded"></div>
+                                                            <div class="w-3/4 h-2 bg-slate-100 rounded"></div>
+                                                            <span class="mt-auto text-[8px] font-black text-slate-400 uppercase text-center">Day Mode</span>
+                                                        </div>
+                                                        <div class="flex-1 aspect-video rounded-xl bg-slate-900 border-2 border-slate-800 flex flex-col gap-2 p-2 shadow-sm"
+                                                            [class.ring-2]="themeService.currentTheme" [class.ring-indigo-500]="themeService.currentTheme">
+                                                            <div class="w-1/2 h-2 bg-slate-800 rounded"></div>
+                                                            <div class="w-full h-8 bg-slate-800/50 rounded"></div>
+                                                            <div class="w-3/4 h-2 bg-slate-800 rounded"></div>
+                                                            <span class="mt-auto text-[8px] font-black text-slate-600 uppercase text-center">Night
+                                                                Mode</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                    
+                                                <!-- Info Card -->
+                                                <div class="flex flex-col justify-center gap-4 text-slate-400">
+                                                    <div class="flex items-start gap-3">
+                                                        <i class="fa-solid fa-circle-check text-emerald-500 mt-1"></i>
+                                                        <p class="text-xs font-bold leading-relaxed">Night mode reduces eye strain during low-light bridge
+                                                            operations.</p>
+                                                    </div>
+                                                    <div class="flex items-start gap-3">
+                                                        <i class="fa-solid fa-circle-check text-emerald-500 mt-1"></i>
+                                                        <p class="text-xs font-bold leading-relaxed">Transitions adapt all charts and telemetry widgets
+                                                            instantly.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
             </div>
         </div>
     </div>

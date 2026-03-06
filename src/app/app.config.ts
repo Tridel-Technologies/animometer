@@ -7,10 +7,13 @@ import { routes } from './app.routes';
 export const appConfig: ApplicationConfig = {
   providers: [
     providePrimeNG({
-            theme: {
-                preset: Aura
-            }
-        }),
+      theme: {
+        preset: Aura,
+        options: {
+          darkModeSelector: '.dark'
+        }
+      }
+    }),
         
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes)

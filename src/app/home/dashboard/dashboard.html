@@ -1,143 +1,167 @@
 <div
-    class="h-full w-full bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-slate-800 dark:to-gray-900 flex flex-col gap-4 overflow-hidden">
-
-
+    class="h-[89vh] w-full bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-slate-800 dark:to-gray-900 flex flex-col gap-4 overflow-hidden">
 
     <!-- Main Content Area -->
-    <div class="flex-1 flex gap-4 min-h-0 w-full">
-    
-        <!-- Left Column: Parameter Grid (60%) -->
+    <div class="flex-1 flex gap-4 w-full p-4 pt-0">
+
+        <!-- Left Column: Parameter Grid & Status Area (60%) -->
         <div class="flex flex-col gap-4 min-h-0" style="flex: 1.3">
+            <!-- Wind Parameters Card Grid -->
             <div style="flex: 7; min-height: 0;"
                 class="rounded-2xl bg-white/80 dark:bg-gradient-to-br dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-sm border border-blue-200 dark:border-cyan-500/20 shadow-xl shadow-blue-100/50 dark:shadow-cyan-500/10 p-5 flex flex-col relative overflow-hidden">
-    
-                <!-- Background blur effects for deep glassmorphism -->
+                <h2 class="text-2xl font-bold text-gray-700 dark:text-slate-100 pb-4">Wind Parameters</h2>
+                <!-- Background blur effects -->
                 <div
                     class="absolute -top-40 -left-40 w-96 h-96 bg-blue-400/20 dark:bg-cyan-500/10 rounded-full blur-[100px] pointer-events-none">
                 </div>
                 <div
                     class="absolute -bottom-40 -right-40 w-96 h-96 bg-cyan-400/20 dark:bg-blue-600/10 rounded-full blur-[100px] pointer-events-none">
                 </div>
-    
-                <div class="grid grid-cols-3 gap-4 h-full content-start overflow-y-auto pr-2 pb-2 z-10 custom-scrollbar">
-    
-                    <!-- Standard 9 Parameter Cards -->
+
+                <div class="grid grid-cols-3 grid-rows-3 gap-4 h-full overflow-y-auto pr-2 pb-2 z-10 custom-scrollbar">
+
+                    <!-- Standard Parameter Cards -->
                     <div *ngFor="let w of getNormalCards()"
                         class="group relative flex flex-col justify-between p-4 rounded-xl bg-gradient-to-br from-white/60 to-blue-50/60 dark:from-slate-800/60 dark:to-slate-900/60 backdrop-blur-md border border-white/50 dark:border-slate-600/30 shadow-lg hover:shadow-xl hover:shadow-cyan-500/20 dark:hover:border-cyan-400/40 hover:-translate-y-1 transition-all duration-300 overflow-hidden min-h-[150px]">
-    
-                        <!-- Echarts background sparkline (positioned bottom right) -->
-                        <div class="absolute right-0 bottom-6 w-[50%] h-[50%] opacity-100 pointer-events-none z-0">
+
+                        <!-- Echarts background sparkline -->
+                        <div class="absolute right-0 bottom-6 w-[40%] h-[50%] opacity-100 pointer-events-none z-0">
                             <div echarts [options]="getChartOption(w.trend, isDarkMode, w.barColor, w.id)"
+                                [merge]="getChartOption(w.trend, isDarkMode, w.barColor, w.id)" [autoResize]="true"
                                 class="w-full h-full mix-blend-multiply dark:mix-blend-lighten"></div>
                         </div>
-    
-                        <!-- 3D Glass overlay on hover -->
+
+                        <!-- 3D Glass overlay -->
                         <div
                             class="absolute inset-0 bg-gradient-to-br from-white/0 to-white/0 dark:from-cyan-500/0 dark:to-blue-500/0 group-hover:from-white/40 group-hover:to-white/10 dark:group-hover:from-cyan-500/10 dark:group-hover:to-blue-500/5 rounded-xl transition-all duration-300 pointer-events-none">
                         </div>
-    
-                        <!-- Header: Icon & Title & Legend -->
+
+                        <!-- Header -->
                         <div class="relative flex items-start justify-between z-10 pointer-events-none">
                             <div class="flex items-center gap-3">
                                 <div
                                     class="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-100 to-white dark:from-slate-700 dark:to-slate-800 flex items-center justify-center shadow-inner border border-white/50 dark:border-slate-600 shadow-md group-hover:shadow-cyan-400/30 transition-all">
                                     <i class="fa-solid text-lg bg-clip-text text-transparent bg-gradient-to-br"
-                                        [ngClass]="[w.icon, w.barColor]"></i>
+                                        [ngClass]="[w.icon, w.barColor]"
+                                        [style.transform]="w.id === 'wind_direction' ? 'rotate(' + w.val + 'deg)' : 'none'"
+                                        [style.transition]="'transform 0.5s ease-out'"></i>
                                 </div>
                                 <span class="text-[14px] font-bold text-gray-700 dark:text-slate-100 tracking-wide">{{w.label}}</span>
-                                </div>
-                                
-                                <!-- Legend top right -->
-                                <div class="flex items-center gap-2 mt-1">
-                                    <div class="flex items-center gap-1">
-                                        <div class="w-1.5 h-1.5 rounded-full bg-blue-500/50"></div>
-                                        <span class="text-[9px] font-medium text-gray-500 dark:text-slate-300 uppercase tracking-widest">current</span>
-                                    </div>
-                                    <div class="flex items-center gap-1">
-                                        <div class="w-1.5 h-1.5 rounded-full bg-slate-300/50"></div>
-                                        <span class="text-[9px] font-medium text-gray-500 dark:text-slate-300 uppercase tracking-widest">daily
-                                            peak</span>
-                                    </div>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <div class="w-1.5 h-1.5 rounded-full bg-blue-500/50"></div>
+                                <span class="text-[9px] font-medium text-gray-500 dark:text-slate-300 uppercase tracking-widest">current</span>
                             </div>
                         </div>
 
-                        <!-- Footer: Value & label -->
+                        <!-- Footer -->
                         <div class="relative flex items-end justify-between w-full mt-auto z-10 pointer-events-none">
-                            <div class="flex items-baseline gap-1">
-                                <div class="text-4xl font-extrabold tracking-tighter text-gray-800 dark:text-white drop-shadow-sm">
-                                    {{w.val | number:'1.1-1'}}
+                            <div class="flex items-baseline gap-1" [ngClass]="isExceedingThreshold(w) ? 'text-red-600 dark:text-red-400' : ''">
+                                <div class="text-4xl font-extrabold tracking-tighter drop-shadow-sm text-gray-800 dark:text-white">
+                                    {{w.val | number:(w.id === 'battery' ? '1.2-2' : '1.1-1')}}
                                 </div>
                                 <span class="text-[15px] font-bold text-blue-600 dark:text-blue-400">{{w.unit}}</span>
-                                </div>
-                                
-                                <div class="text-[10px] font-semibold text-gray-400 dark:text-slate-400">
-                                    24 min / max
-                                </div>
+                            </div>
+                            <div class="flex flex-col items-end text-[10px] font-semibold text-gray-400 dark:text-slate-400">
+                                <span>{{getMin(w.trend) | number:(w.id === 'battery' ? '1.2-2' : '1.1-1')}} / {{getMax(w.trend) | number:(w.id ===
+                                    'battery' ? '1.2-2' : '1.1-1')}}</span>
+                                <span class="text-[9px] uppercase tracking-widest opacity-80 mt-0.5">min / max</span>
+                            </div>
                         </div>
                     </div>
+<!-- Slide Image Card -->
+<div
+    class="relative flex flex-col rounded-xl bg-white/40 dark:bg-slate-800/40 backdrop-blur-md border border-white/50 dark:border-slate-600/30 shadow-lg overflow-hidden min-h-[150px]">
+    <img [src]="currentImagePath" (error)="onImageError()"
+        class="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000">
+                    </div>
                 </div>
-                </div>
-                <!-- Bottom Bar: Status Area -->
-                <div style="flex: 3; min-height: 0;" class="grid grid-cols-3 gap-4">
-                    <!-- GPS (taking 2 cols, formally Alerts) -->
-                    <div *ngIf="getGpsCard() as gps"
-                    class="col-span-2 rounded-2xl bg-white/80 dark:bg-slate-800/90 backdrop-blur-sm border border-blue-200 dark:border-cyan-500/20 p-4 shadow-lg shadow-cyan-500/10 flex items-center justify-between relative overflow-hidden group">
+            </div>
+
+            <!-- Bottom Bar: Status Area -->
+            <div style="flex: 3; min-height: 0;" class="grid grid-cols-3 gap-4">
+                <!-- Trajectory Components (Charts) (66%) -->
+                <div
+                    class="col-span-2 rounded-2xl bg-white/80 dark:bg-slate-800/90 backdrop-blur-sm border border-blue-200 dark:border-cyan-500/20 p-4 shadow-lg shadow-cyan-500/10 flex flex-col justify-between relative overflow-hidden group gap-2">
                     <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHBhdGggZD0iTTEgMWgxOHYxOEgxeiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMzhCRkY4IiBzdHJva2Utb3BhY2l0eT0iMC4yIi8+PC9zdmc+')] bg-[length:30px_30px] opacity-10 dark:opacity-20 pointer-events-none"></div>
 
-                    <!-- Left side: icon and title -->
-                    <div class="flex items-center gap-4 z-10">
-                        <div
-                            class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-[0_0_15px_rgba(34,211,238,0.4)]">
-                            <i class="fa-solid fa-location-crosshairs text-white text-xl"></i>
-                        </div>
-                        <div>
-                            <div class="text-[10px] font-bold uppercase tracking-widest text-cyan-600 dark:text-cyan-400 mb-0.5">GPS Coordinates
+                    <div class="flex items-center justify-between z-10 w-full mb-1">
+                        <div class="flex items-center gap-4">
+                            <div
+                                class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-[0_0_15px_rgba(34,211,238,0.4)]">
+                                <i class="fa-solid fa-chart-line text-white text-lg"></i>
                             </div>
-                            <div class="text-sm font-bold text-gray-800 dark:text-slate-300">Live Satellite Positioning Data</div>
+                            <div>
+                                <div class="text-[10px] font-bold uppercase tracking-widest text-cyan-600 dark:text-cyan-400 mb-0.5">Trajectory
+                                    Components</div>
+                                <div class="text-xs font-bold text-gray-800 dark:text-slate-300">Live Velocity Axis Analysis</div>
+                            </div>
                         </div>
-                        </div>
+                    </div>
 
-                    <!-- Right side: lat/lon values -->
-                    <div class="flex items-center gap-6 z-10 pr-2">
-                        <div class="flex flex-col items-end">
-                            <span
-                                class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-0.5">LATITUDE</span>
-                            <div
-                                class="font-mono text-2xl font-black text-gray-800 dark:text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
-                                {{gps.lat | number:'1.4-4'}}° N
-                            </div>
+                    <div class="flex-1 flex flex-col gap-2 z-10 min-h-0">
+                        <div
+                            class="flex-1 bg-slate-50/50 dark:bg-slate-900/50 rounded-lg border border-blue-100/50 dark:border-slate-700/50 relative">
+                            <div echarts [options]="getLineChartOption('wind_ux', isDarkMode)"
+                                [merge]="getLineChartOption('wind_ux', isDarkMode)" [autoResize]="true" class="absolute inset-0"></div>
                         </div>
-                        <div class="w-px h-10 bg-gradient-to-b from-transparent via-cyan-500/50 to-transparent"></div>
-                        <div class="flex flex-col items-start">
-                            <span
-                                class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-0.5">LONGITUDE</span>
+                        <div class="flex-1 flex gap-2">
                             <div
-                                class="font-mono text-2xl font-black text-gray-800 dark:text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
-                                {{gps.lon | number:'1.4-4'}}° E
+                                class="flex-1 bg-slate-50/50 dark:bg-slate-900/50 rounded-lg border border-blue-100/50 dark:border-slate-700/50 relative">
+                                <div echarts [options]="getLineChartOption('wind_uy', isDarkMode)"
+                                    [merge]="getLineChartOption('wind_uy', isDarkMode)" [autoResize]="true" class="absolute inset-0"></div>
+                            </div>
+                            <div
+                                class="flex-1 bg-slate-50/50 dark:bg-slate-900/50 rounded-lg border border-blue-100/50 dark:border-slate-700/50 relative">
+                                <div echarts [options]="getLineChartOption('wind_uz', isDarkMode)"
+                                    [merge]="getLineChartOption('wind_uz', isDarkMode)" [autoResize]="true" class="absolute inset-0"></div>
                             </div>
                         </div>
                     </div>
+                    </div>
+                    
+                    <!-- Wind Speed & Direction Section (33%) -->
+                    <div class="col-span-1 grid grid-rows-2 gap-4">
+                        <ng-container *ngFor="let w of [getWindSpeedCard(), getWindDirectionCard()]">
+                            <div *ngIf="w"
+                                class="group relative flex flex-col justify-between p-4 rounded-xl bg-gradient-to-br from-white/60 to-blue-50/60 dark:from-slate-800/60 dark:to-slate-900/60 backdrop-blur-md border border-white/50 dark:border-slate-600/30 shadow-lg hover:shadow-xl hover:shadow-cyan-500/20 dark:hover:border-cyan-400/40 hover:-translate-y-1 transition-all duration-300 overflow-hidden h-full">
+                                <div class="absolute right-0 bottom-6 w-[40%] h-[50%] opacity-100 pointer-events-none z-0">
+                                    <div echarts [options]="getChartOption(w.trend, isDarkMode, w.barColor, w.id)"
+                                        [merge]="getChartOption(w.trend, isDarkMode, w.barColor, w.id)" [autoResize]="true"
+                                        class="w-full h-full mix-blend-multiply dark:mix-blend-lighten"></div>
+                            </div>
+                            <div class="relative flex items-start justify-between z-10 pointer-events-none">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-100 to-white dark:from-slate-700 dark:to-slate-800 flex items-center justify-center shadow-inner border border-white/50 dark:border-slate-600 shadow-md group-hover:shadow-cyan-400/30 transition-all">
+                                        <i class="fa-solid text-lg bg-clip-text text-transparent bg-gradient-to-br" [ngClass]="[w.icon, w.barColor]"
+                                            [style.transform]="w.id === 'wind_direction' ? 'rotate(' + w.val + 'deg)' : 'none'"
+                                            [style.transition]="'transform 0.5s ease-out'"></i>
+                                    </div>
+                                    <span class="text-[14px] font-bold text-gray-700 dark:text-slate-100 tracking-wide">{{w.label}}</span>
+                                    </div>
+                                <div class="flex items-center gap-1">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-blue-500/50"></div>
+                                    <span class="text-[9px] font-medium text-gray-500 dark:text-slate-300 uppercase tracking-widest">LIVE</span>
+                                </div>
+                                </div>
+<div class="relative flex items-end justify-between w-full mt-auto z-10 pointer-events-none">
+    <div class="flex items-baseline gap-1" [ngClass]="isExceedingThreshold(w) ? 'text-red-600 dark:text-red-400' : ''">
+        <div class="text-4xl font-extrabold tracking-tighter drop-shadow-sm text-gray-800 dark:text-white">
+            {{w.val | number:(w.id === 'wind_direction' ? '1.0-0' : '1.1-1')}}
+                                    </div>
+                                    <span class="text-[15px] font-bold text-blue-600 dark:text-blue-400">{{w.unit}}</span>
+                                    </div>
+                                <div class="flex flex-col items-end text-[10px] font-semibold text-gray-400 dark:text-slate-400">
+                                    <span>{{getMin(w.trend) | number:'1.1-1'}} / {{getMax(w.trend) | number:'1.1-1'}}</span>
+                                    <span class="text-[9px] uppercase tracking-widest opacity-80 mt-0.5">min / max</span>
+                                </div>
+                            </div>
+                        </div>
+                    </ng-container>
                 </div>
-<!-- Uptime & Fuel -->
-<div
-    class="rounded-2xl bg-white/80 dark:bg-slate-800/90 backdrop-blur-sm border border-blue-200 dark:border-cyan-500/20 p-4 shadow-lg flex flex-col justify-center gap-2">
-    <div class="flex items-center justify-between">
-        <span class="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest">Uptime</span>
-        <span class="text-sm font-black text-cyan-600 dark:text-cyan-400">99.9%</span>
-                    </div>
-                    <div class="w-full bg-gray-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
-                        <div class="bg-gradient-to-r from-cyan-400 to-blue-500 h-full rounded-full" style="width: 99.9%"></div>
-                    </div>
-                    <div class="flex items-center justify-between mt-1">
-                        <span class="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest">Fuel Level</span>
-                        <span class="text-sm font-black text-emerald-600 dark:text-emerald-400">78%</span>
-                    </div>
-                    <div class="w-full bg-gray-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
-                        <div class="bg-gradient-to-r from-emerald-400 to-green-500 h-full rounded-full" style="width: 78%"></div>
-                    </div>
-                    </div>
-                    </div>
-                    </div>
+                </div>
+                </div>
 
         <!-- Right Column: Map & Health (40%) -->
         <div class="flex flex-col gap-4 min-h-0" style="flex: 0.85">
@@ -145,59 +169,57 @@
             <div style="flex: 7; min-height: 0;"
                 class="rounded-2xl bg-white/80 dark:bg-slate-800/90 backdrop-blur-sm border border-blue-200 dark:border-cyan-500/20 p-1 shadow-xl shadow-cyan-500/10 overflow-hidden relative group">
                 <app-map [selectedStation]="selectedStation!"></app-map>
-        
-                <!-- Map Overlay Glass Box -->
-                <div
-                    class="absolute bottom-4 left-4 right-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/50 dark:border-slate-700 p-3 rounded-xl flex items-center justify-between shadow-lg pointer-events-none transition-all duration-300 transform translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100">
-                    <div class="flex items-center gap-2">
-                        <i class="fa-solid fa-satellite text-cyan-500"></i>
-                        <span class="text-xs font-bold text-gray-700 dark:text-slate-300">Live Satellite Feed</span>
-                    </div>
-                    <div class="text-xs font-mono text-gray-500 dark:text-slate-400">SYNC: ACTUAL</div>
-                    </div>
             </div>
-            <!-- Sensor Health Status Panel -->
-            <div style="flex: 3; min-height: 0;"
-                class="rounded-2xl bg-white/80 dark:bg-gradient-to-br dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-sm border border-blue-200 dark:border-cyan-500/20 shadow-xl shadow-cyan-500/10 p-5 flex flex-col relative overflow-hidden">
-    <div class="flex items-center gap-3 mb-4 z-10">
-        <i class="fa-solid fa-microchip text-blue-500 dark:text-cyan-400"></i>
-        <h3 class="text-sm font-bold text-gray-800 dark:text-white uppercase tracking-widest">Sensor Health Status</h3>
-    </div>
-                <div class="flex-1 grid grid-cols-3 gap-3 z-10">
-                    <!-- Sensor 1 -->
-                    <div
-                        class="bg-white/50 dark:bg-slate-800/80 border border-blue-100 dark:border-slate-700 rounded-xl p-3 flex flex-col items-center justify-center gap-2 hover:border-cyan-400/50 transition-colors">
-                        <div class="relative">
-                            <i class="fa-solid fa-wind text-gray-600 dark:text-slate-300 text-lg"></i>
-                            <div
-                                class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_5px_#10b981]">
-                            </div>
-                        </div>
-                        <span
-                            class="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider text-center">Anemometer</span>
+<!-- Bottom Section: GPS & Sensor Health -->
+<div style="flex: 3; min-height: 0;" class="flex gap-4">
+
+    <!-- GPS Data Panel -->
+    <div *ngIf="getGpsCard() as gps"
+        class="flex-[0.8] rounded-2xl bg-white/80 dark:bg-slate-800/90 backdrop-blur-sm border border-blue-200 dark:border-cyan-500/20 p-5 shadow-xl shadow-cyan-500/10 flex flex-col relative overflow-hidden group">
+        <div class="flex items-center justify-between mb-4 z-10 w-full">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-location-dot text-blue-500 dark:text-cyan-400"></i>
+                <h3 class="text-[12px] font-bold text-gray-800 dark:text-white uppercase tracking-widest">GPS
+                    POSITIONING</h3>
+            </div>
                     </div>
-                    <!-- Sensor 2 -->
-                    <div
-                        class="bg-white/50 dark:bg-slate-800/80 border border-blue-100 dark:border-slate-700 rounded-xl p-3 flex flex-col items-center justify-center gap-2 hover:border-cyan-400/50 transition-colors">
-                        <div class="relative">
-                            <i class="fa-solid fa-satellite-dish text-gray-600 dark:text-slate-300 text-lg"></i>
-                            <div
-                                class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_5px_#10b981]">
+                    <div class="flex-1 flex flex-col justify-center gap-4 z-10">
+                        <div class="flex flex-col">
+                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Latitude</span>
+                            <div class="text-2xl font-mono font-black text-gray-800 dark:text-blue-400">{{gps.lat | number:'1.4-4'}}° N
                             </div>
                         </div>
-                        <span
-                            class="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider text-center">Telemetry</span>
+                        <div class="h-px w-full bg-gradient-to-r from-blue-200 via-transparent to-transparent dark:from-slate-700"></div>
+                        <div class="flex flex-col">
+                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Longitude</span>
+                            <div class="text-2xl font-mono font-black text-gray-800 dark:text-blue-400">{{gps.lon | number:'1.4-4'}}° E</div>
+                        </div>
                     </div>
-                    <!-- Sensor 3 -->
-                    <div
-                        class="bg-white/50 dark:bg-slate-800/80 border border-blue-100 dark:border-slate-700 rounded-xl p-3 flex flex-col items-center justify-center gap-2 hover:border-yellow-400/50 transition-colors">
-                        <div class="relative">
-                            <i class="fa-solid fa-battery-half text-gray-600 dark:text-slate-300 text-lg"></i>
-                            <div class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-yellow-500 animate-pulse shadow-[0_0_5px_#eab308]">
+                    <i
+                        class="fa-solid fa-satellite absolute -bottom-4 -right-4 text-8xl text-blue-500/5 dark:text-cyan-400/5 -rotate-12"></i>
+                    </div>
+<!-- Sensor Status Panel -->
+<div
+    class="flex-[2] rounded-2xl bg-[#f0f7ff] dark:bg-slate-900/40 backdrop-blur-sm border border-blue-100 dark:border-slate-800/50 p-4 shadow-xl shadow-blue-500/5 flex flex-col relative overflow-hidden group">
+    <h3 class="text-xs font-bold text-slate-700 dark:text-slate-200 text-center mb-3 tracking-widest uppercase">Sensor
+        Status</h3>
+    <div class="flex-1 flex flex-col gap-2 min-h-0">
+        <div *ngFor="let s of getSensorStatuses()"
+            class="flex items-center justify-between bg-white/95 dark:bg-slate-800/90 rounded-xl px-4 py-2 border border-blue-50/50 dark:border-slate-700/50 hover:shadow-sm transition-all h-[22%]">
+            <div class="flex items-center gap-3">
+                <div
+                    class="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700 flex items-center justify-center border border-slate-100 dark:border-slate-600">
+                    <i class="fa-solid" [ngClass]="[s.icon, 'text-blue-500 dark:text-cyan-400 text-sm']"></i>
+                </div>
+                                <span class="text-[12px] font-bold text-slate-700 dark:text-slate-200">{{s.label}}</span>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400">{{s.time}}</span>
+                                <div
+                                    [class]="'w-2.5 h-2.5 rounded-full blur-[1px] ' + (s.status === 'online' ? 'bg-emerald-400 shadow-[0_0_5px_#10b981]' : 'bg-rose-400 shadow-[0_0_5px_#f43f5e]')">
+                                </div>
                             </div>
                         </div>
-                        <span class="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider text-center">Power
-                            Unit</span>
                     </div>
                 </div>
             </div>

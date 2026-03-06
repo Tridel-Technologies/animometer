@@ -1,91 +1,114 @@
-<div class="flex-1 flex gap-6 min-h-0">
-    <!-- Left Side: Charts Section -->
-    <div class="flex-1 flex gap-6 min-h-0" #leftChartContainer>
-        <!-- Left Charts Column -->
-        <div class="w-1/1 flex flex-col gap-6">
-            <!-- Top Chart: Wind Speed Analysis -->
-            <div
-                class="h-[50%] w-[100%] rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex flex-col">
-                <h3 class="text-xl font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-6">
-                    Wind Speed Analysis</h3>
-                <div class="h-[90%] w-[100%]" #chartContainer>
-                    <app-wind-chart [windData]="windData" [height]="chartHeight" [width]="chartWidth" cast="day">
-                    </app-wind-chart>
-                </div>
-            </div>
+<div class="flex flex-col h-full w-full bg-slate-50/50 dark:bg-slate-900/50 p-6 overflow-hidden">
+    <!-- Analysis Header / Filters -->
+    <div
+        class="flex flex-wrap items-center justify-between gap-6 mb-8 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl shadow-slate-200/50 dark:shadow-none">
 
-            <!-- Bottom Chart: Temperature Trend -->
+        <!-- Left: Branding/Context -->
+        <div class="flex items-center gap-4">
             <div
-                class="h-[50%] w-[100%] rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex flex-col">
-                <h3 class="text-xl font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-6">
-                    Temperature Trend</h3>
-                <div class="flex-1">
-                    <app-wind-chart [windData]="windData" [height]="chartHeight" [width]="chartWidth" cast="day">
-                    </app-wind-chart>
-                </div>
+                class="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                <i class="fa-solid fa-chart-line text-white text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl font-black text-slate-800 dark:text-white leading-tight">Historical Analysis</h1>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Station: {{selectedStation}}</p>
             </div>
         </div>
 
-        <!-- Right Chart: Polar Chart -->
-        <div class="w-1/2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex flex-col"
-            #polarChartContainer>
-            <h3 class="text-xl font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-6">
-                Wind Rose</h3>
-            <div class="flex-1">
-                <app-polar-chart [polarAxis]="polarData" [id]="'wind-rose'" [height]="400" [width]="500">
-                </app-polar-chart>
+        <!-- Right: Primary Filters -->
+        <div class="flex flex-wrap items-center gap-6">
+        
+            <!-- Time Scale Toggle -->
+            <div class="flex flex-col gap-2">
+                <span class="text-[10px] font-black uppercase tracking-tighter text-slate-400">Time Horizon</span>
+                <p-selectbutton [options]="timeScales" [(ngModel)]="selectedTimeScale" (onChange)="onTimeScaleChange()"
+                    [styleClass]="'premium-select-button'"></p-selectbutton>
+            </div>
+            <!-- Enhanced Date Picker -->
+            <div class="flex flex-col gap-2">
+                <span class="text-[10px] font-black uppercase tracking-tighter text-slate-400">Target Date</span>
+                <p-datepicker [(ngModel)]="selectedDate" (onSelect)="onDateChange()" [showIcon]="true" [iconDisplay]="'input'"
+                    [view]="selectedTimeScale === 'Year' ? 'year' : (selectedTimeScale === 'Month' ? 'month' : 'date')"
+                    [dateFormat]="selectedTimeScale === 'Year' ? 'yy' : (selectedTimeScale === 'Month' ? 'mm/yy' : 'dd/mm/yy')"
+                    styleClass="w-48" appendTo="body"></p-datepicker>
+            </div>
+        
+            <!-- Station Dropdown -->
+            <div class="flex flex-col gap-2">
+                <span class="text-[10px] font-black uppercase tracking-tighter text-slate-400">Vessel Location</span>
+                <p-select [options]="stations" [(ngModel)]="selectedStation" (onChange)="onStationChange()" optionLabel="label"
+                    optionValue="value" class="w-56" appendTo="body"></p-select>
             </div>
         </div>
     </div>
 
-    <!-- Right Side: Filter Section -->
-    <div class="w-80 flex flex-col gap-6">
-        <!-- Time Scale Filter -->
-        <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
-            <h3 class="text-lg font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">
-                Time Scale</h3>
-            <div
-                class="flex bg-slate-50 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
-                <button *ngFor="let scale of timeScales" (click)="onTimeScaleChange(scale.value)"
-                    class="flex-1 px-4 py-2 rounded-lg text-sm font-bold transition-all" [ngClass]="selectedTimeScale === scale.value
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'">
-                    {{ scale.label }}
+    <!-- Main Analysis Grid -->
+    <div class="flex-1 flex gap-6 overflow-hidden">
+    
+        <!-- Parameters Sidebar -->
+        <div
+            class="w-64 flex flex-col gap-4 bg-white/60 dark:bg-slate-800/40 backdrop-blur-sm p-4 rounded-3xl border border-slate-200 dark:border-slate-700/50">
+            <h3 class="text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Metrics to Analyze</h3>
+            <div class="flex flex-col gap-2 overflow-y-auto custom-scrollbar pr-1">
+                <button *ngFor="let param of parameters" (click)="toggleParameter(param)"
+                    class="group flex items-center justify-between p-4 rounded-2xl border transition-all duration-300"
+                    [ngClass]="param.selected 
+                            ? 'bg-white dark:bg-slate-700 border-blue-500/50 shadow-md ring-1 ring-blue-500/20' 
+                            : 'bg-transparent border-transparent opacity-60 hover:opacity-100 hover:bg-slate-100 dark:hover:bg-slate-800'">
+                    <div class="flex items-center gap-3">
+                        <div class="w-2 h-2 rounded-full" [style.background-color]="param.color"></div>
+                        <span class="text-sm font-bold"
+                            [ngClass]="param.selected ? 'text-slate-800 dark:text-white' : 'text-slate-500'">{{getParameterLabel(param)}}</span>
+                    </div>
+                    <i class="fa-solid fa-circle-check text-blue-500 transition-transform duration-300"
+                        [ngClass]="param.selected ? 'scale-110 opacity-100' : 'scale-75 opacity-0'"></i>
                 </button>
             </div>
         </div>
 
-        <!-- Date Picker -->
-        <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
-            <h3 class="text-lg font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">
-                Date Selection</h3>
-            <input type="date" [value]="selectedDate" (change)="onDateChange($event.target.value)"
-                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
+        <!-- Charts Scroll Area -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-6" #chartContainer>
+            <div class="grid grid-cols-1 gap-6">
+                <!-- Data Loading State -->
+                <div *ngIf="isLoading" class="col-span-full h-96 flex flex-col items-center justify-center gap-4">
+                    <i class="fa-solid fa-circle-notch fa-spin text-4xl text-blue-500"></i>
+                    <p class="text-slate-400 font-bold uppercase tracking-widest text-xs">Reconstructing History...</p>
+                </div>
 
-        <!-- Station Selection -->
-        <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
-            <h3 class="text-lg font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">
-                Station</h3>
-            <select [value]="selectedStation" (change)="onStationChange($event)"
-                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500">
-                <option *ngFor="let station of stations" [value]="station">{{ station }}</option>
-            </select>
-        </div>
+                <!-- Empty State -->
+                <div *ngIf="!isLoading && analysisData.length === 0"
+                    class="col-span-full h-96 flex flex-col items-center justify-center gap-4 bg-white/40 dark:bg-slate-800/20 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700/50">
+                    <i class="fa-solid fa-database text-4xl text-slate-300"></i>
+                    <p class="text-slate-400 font-bold uppercase tracking-widest text-xs">No records found for the selected window</p>
+                </div>
 
-        <!-- Parameter Selection -->
-        <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
-            <h3 class="text-lg font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">
-                Parameters</h3>
-            <div class="flex flex-col gap-3">
-                <button *ngFor="let param of parameters" (click)="toggleParameter(param)"
-                    class="flex items-center justify-between p-3 rounded-lg text-sm font-bold border transition-all"
-                    [ngClass]="param.selected
-                        ? 'bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400'
-                        : 'bg-slate-50 border-slate-200 text-slate-400 dark:bg-slate-950 dark:border-slate-800 opacity-60'">
-                    <span>{{ param.label }}</span>
-                    <i class="fa-solid" [ngClass]="param.selected ? 'fa-check-circle' : 'fa-circle-xmark'"></i>
-                </button>
+                <!-- Active Parameter Charts -->
+                <div *ngFor="let param of getSelectedParameters()"
+                    class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 shadow-xl hover:shadow-2xl transition-all duration-500 border-l-4"
+                    [style.border-left-color]="param.color">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-black text-slate-700 dark:text-slate-200 tracking-tight flex items-center gap-3">
+                            <span class="w-2 h-8 rounded-full" [style.background-color]="param.color"></span>
+                            {{getParameterLabel(param)}} Trend
+                        </h3>
+                        <div class="flex gap-4">
+                            <div class="flex flex-col items-end">
+                                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Average</span>
+                                <span class="text-sm font-bold text-slate-700 dark:text-slate-300">--</span>
+                            </div>
+                            <div class="flex flex-col items-end border-l border-slate-100 dark:border-slate-800 pl-4">
+                                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Deviation</span>
+                                <span class="text-sm font-bold text-slate-700 dark:text-slate-300">--</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="h-[300px] w-full relative">
+                        <!-- We reuse WindChart but passed tailored data -->
+                        <app-wind-chart [windData]="getChartData(param.key)" [height]="300" [width]="(chartWidth || 1000)"
+                            cast="analysis">
+                        </app-wind-chart>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

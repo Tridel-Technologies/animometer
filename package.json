@@ -35,12 +35,17 @@
     "@tensorflow/tfjs": "^4.22.0",
     "angular-plotly.js": "^6.0.0",
     "echarts": "^6.0.0",
+    "echarts-gl": "^2.0.9",
+    "jspdf": "^4.2.0",
+    "jspdf-autotable": "^5.0.7",
     "mapbox-gl": "^3.17.0",
     "ngx-echarts": "^21.0.0",
     "plotly.js-dist-min": "^3.0.1",
     "primeng": "^21.0.2",
     "rxjs": "~7.8.0",
-    "tslib": "^2.3.0"
+    "socket.io-client": "^4.8.3",
+    "tslib": "^2.3.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@angular/build": "^21.0.1",

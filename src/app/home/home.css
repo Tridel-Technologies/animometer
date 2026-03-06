@@ -53,3 +53,38 @@ body, html {
 .dark ::-webkit-scrollbar-thumb:hover {
   background: rgba(51, 65, 85, 0.7);
 }
+/* Premium Header Select Stabilizer */
+.flex.items-center.gap-4 ::ng-deep .premium-header-select.p-select {
+  width: 220px !important;
+  height: 40px !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+}
+
+.dark .flex.items-center.gap-4 ::ng-deep .premium-header-select.p-select {
+  background: rgba(30, 41, 59, 0.8) !important;
+  border: 1px solid rgba(34, 211, 238, 0.2) !important;
+  box-shadow: 0 0 15px rgba(34, 211, 238, 0.05) !important;
+}
+
+.flex.items-center.gap-4 ::ng-deep .premium-header-select .p-select-label {
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.1em !important;
+  color: #1e293b !important;
+  display: flex !important;
+  align-items: center !important;
+  text-transform: uppercase !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+.dark .flex.items-center.gap-4 ::ng-deep .premium-header-select .p-select-label {
+  color: #22d3ee !important;
+}
+
+.flex.items-center.gap-4 ::ng-deep .premium-header-select .p-select-dropdown {
+  width: 32px !important;
+}

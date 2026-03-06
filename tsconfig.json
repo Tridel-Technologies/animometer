@@ -13,7 +13,16 @@
     "experimentalDecorators": true,
     "importHelpers": true,
     "target": "ES2022",
-    "module": "preserve"
+    "module": "preserve",
+    "baseUrl": ".",
+    "paths": {
+      "zrender/lib/animation/Animator": [
+        "node_modules/zrender/lib/animation/Animator.js"
+      ],
+      "zrender/lib/core/LRU": [
+        "node_modules/zrender/lib/core/LRU.js"
+      ]
+    }
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

@@ -1,0 +1,409 @@
+<div class="flex-1 flex flex-col gap-6 p-4 min-h-0 overflow-hidden relative">
+
+    <!-- Loading Overlay -->
+    <div *ngIf="isLoading"
+        class="absolute inset-0 z-[200] flex items-center justify-center bg-white/40 dark:bg-slate-900/40 backdrop-blur-[2px] transition-all">
+        <div class="flex flex-col items-center gap-4">
+            <div
+                class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-blue-500/20">
+            </div>
+            <span
+                class="text-xs font-black text-blue-600 dark:text-cyan-400 uppercase tracking-widest animate-pulse">Syncing
+                Database...</span>
+        </div>
+    </div>
+
+    <!-- Header & Tabs -->
+    <div class="flex flex-col gap-6">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+                <h2 class="text-2xl font-black text-slate-800 dark:text-white tracking-tight">System Administration</h2>
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mt-1">Access Control &
+                    Personnel Management</p>
+            </div>
+
+            <div
+                class="flex bg-slate-200/50 dark:bg-slate-800/50 p-1 rounded-2xl border border-white/50 dark:border-slate-700/50">
+                <button (click)="activeTab = 'users'" [class.bg-white]="activeTab === 'users'"
+                    [class.dark:bg-slate-700]="activeTab === 'users'"
+                    class="px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300"
+                    [ngClass]="activeTab === 'users' ? 'text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'">
+                    Users
+                </button>
+                <button (click)="activeTab = 'roles'" [class.bg-white]="activeTab === 'roles'"
+                    [class.dark:bg-slate-700]="activeTab === 'roles'"
+                    class="px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300"
+                    [ngClass]="activeTab === 'roles' ? 'text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'">
+                    Roles
+                </button>
+                <button (click)="activeTab = 'designations'" [class.bg-white]="activeTab === 'designations'"
+                    [class.dark:bg-slate-700]="activeTab === 'designations'"
+                    class="px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300"
+                    [ngClass]="activeTab === 'designations' ? 'text-cyan-600 shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'">
+                    Positions
+                </button>
+            </div>
+
+            <button *ngIf="activeTab === 'users'" (click)="openUserModal()"
+                class="px-6 py-2.5 rounded-xl bg-blue-600 text-white font-black text-xs uppercase tracking-widest hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition-all flex items-center gap-3">
+                <i class="fa-solid fa-user-plus"></i> New User
+            </button>
+            <button *ngIf="activeTab === 'roles'" (click)="openRoleModal()"
+                class="px-6 py-2.5 rounded-xl bg-indigo-600 text-white font-black text-xs uppercase tracking-widest hover:bg-indigo-700 shadow-lg shadow-indigo-500/30 transition-all flex items-center gap-3">
+                <i class="fa-solid fa-shield-plus"></i> New Role
+            </button>
+            <button *ngIf="activeTab === 'designations'" (click)="openDesignationModal()"
+                class="px-6 py-2.5 rounded-xl bg-cyan-600 text-white font-black text-xs uppercase tracking-widest hover:bg-cyan-700 shadow-lg shadow-cyan-500/30 transition-all flex items-center gap-3">
+                <i class="fa-solid fa-id-badge"></i> New Position
+            </button>
+        </div>
+    </div>
+
+    <!-- Content Area (Table View) -->
+    <div
+        class="flex-1 min-h-0 bg-white/40 dark:bg-slate-800/40 backdrop-blur-md rounded-3xl border border-white/50 dark:border-slate-700/50 shadow-xl overflow-hidden flex flex-col">
+        <div class="flex-1 overflow-auto custom-scrollbar">
+
+            <!-- Users Table -->
+            <table *ngIf="activeTab === 'users'" class="w-full text-left border-collapse">
+                <thead
+                    class="sticky top-0 z-10 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800">
+                    <tr>
+                        <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Identity
+                        </th>
+                        <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Access
+                            Role</th>
+                        <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                            Designation</th>
+                        <th
+                            class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">
+                            Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                    <tr *ngFor="let u of users"
+                        class="group hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-4">
+                                <div
+                                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-black shadow-md shadow-blue-500/10">
+                                    {{(u.name || 'U').charAt(0)}}
+                                </div>
+                                <div>
+                                    <div class="text-sm font-black text-slate-800 dark:text-white">{{u.name}}</div>
+                                    <div class="text-[11px] font-bold text-slate-400">{{u.email}}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span
+                                class="px-3 py-1 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase tracking-widest border border-indigo-500/20">
+                                {{u.role || 'No Role'}}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-xs font-bold text-slate-600 dark:text-slate-300">{{u.designation || 'Not
+                                Set'}}</span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button (click)="openUserModal(u)"
+                                    class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 transition-all">
+                                    <i class="fa-solid fa-pen-to-square text-xs"></i>
+                                </button>
+                                <button (click)="deleteUser(u.id)"
+                                    class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 transition-all">
+                                    <i class="fa-solid fa-trash-can text-xs"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr *ngIf="users.length === 0">
+                        <td colspan="4" class="px-6 py-20 text-center">
+                            <div class="flex flex-col items-center gap-3 opacity-20">
+                                <i class="fa-solid fa-users-slash text-5xl"></i>
+                                <span class="text-xs font-black uppercase tracking-widest">No Crew Data Found</span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Roles Table -->
+            <table *ngIf="activeTab === 'roles'" class="w-full text-left border-collapse">
+                <thead
+                    class="sticky top-0 z-10 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800">
+                    <tr>
+                        <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Role Name
+                        </th>
+                        <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Limitation
+                            / Access</th>
+                        <th
+                            class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">
+                            Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                    <tr *ngFor="let r of roles"
+                        class="group hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]">
+                                </div>
+                                <span class="text-sm font-black text-slate-800 dark:text-white">{{r.name}}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex flex-wrap gap-2">
+                                <span *ngFor="let p of r.permissions | keyvalue"
+                                    class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border"
+                                    [ngClass]="p.value ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700 opacity-50'">
+                                    {{p.key}}
+                                </span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button (click)="openRoleModal(r)"
+                                    class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/20 transition-all">
+                                    <i class="fa-solid fa-gears text-xs"></i>
+                                </button>
+                                <button (click)="deleteRole(r.id)"
+                                    class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 transition-all">
+                                    <i class="fa-solid fa-trash-can text-xs"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Designations Table -->
+            <table *ngIf="activeTab === 'designations'" class="w-full text-left border-collapse">
+                <thead
+                    class="sticky top-0 z-10 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800">
+                    <tr>
+                        <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Position
+                            Name</th>
+                        <th
+                            class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">
+                            Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                    <tr *ngFor="let d of designations"
+                        class="group hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-2 h-2 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.5)]">
+                                </div>
+                                <span class="text-sm font-black text-slate-800 dark:text-white">{{d.name}}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button (click)="openDesignationModal(d)"
+                                    class="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-500 hover:bg-cyan-500/20 transition-all">
+                                    <i class="fa-solid fa-pen text-xs"></i>
+                                </button>
+                                <button (click)="deleteDesignation(d.id)"
+                                    class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 transition-all">
+                                    <i class="fa-solid fa-trash-can text-xs"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- User Modal -->
+    <div *ngIf="showUserModal"
+        class="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+        <div
+            class="w-full max-w-xl bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-white/20 dark:border-slate-800 overflow-hidden scale-in-center">
+            <div
+                class="p-8 border-b border-slate-50 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+                <div>
+                    <h3 class="text-xl font-black text-slate-800 dark:text-white">{{isEditing ? 'Modify' : 'Enlist'}}
+                        Crew Member</h3>
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Identity & Access
+                        Registration</p>
+                </div>
+                <button (click)="showUserModal = false"
+                    class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                    <i class="fa-solid fa-xmark text-slate-400"></i>
+                </button>
+            </div>
+            <div class="p-10 space-y-8">
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Full Name</label>
+                        <input [(ngModel)]="currentUser.name" type="text"
+                            class="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-4 text-sm font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Communication
+                            Email</label>
+                        <input [(ngModel)]="currentUser.email" type="email"
+                            class="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-4 text-sm font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Security
+                            Role</label>
+                        <div class="relative">
+                            <select [(ngModel)]="currentUser.role"
+                                class="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-4 text-sm font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all appearance-none cursor-pointer">
+                                <option value="">Assign Role</option>
+                                <option *ngFor="let r of roles" [value]="r.name">{{r.name}}</option>
+                            </select>
+                            <i
+                                class="fa-solid fa-chevron-down absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none text-xs"></i>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Onboard
+                            Position</label>
+                        <div class="relative">
+                            <select [(ngModel)]="currentUser.designation"
+                                class="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-4 text-sm font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all appearance-none cursor-pointer">
+                                <option value="">Assign Position</option>
+                                <option *ngFor="let d of designations" [value]="d.name">{{d.name}}</option>
+                            </select>
+                            <i
+                                class="fa-solid fa-chevron-down absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div *ngIf="!isEditing" class="grid grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Password</label>
+                        <input [(ngModel)]="currentUser.password" type="password"
+                            class="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-4 text-sm font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Confirm New
+                            Password</label>
+                        <input [(ngModel)]="currentUser.confirmPassword" type="password"
+                            class="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-4 text-sm font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all">
+                    </div>
+                </div>
+            </div>
+            <div class="p-8 bg-slate-50 dark:bg-slate-800/80 flex justify-end gap-4">
+                <button (click)="showUserModal = false"
+                    class="px-6 py-3 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 dark:hover:text-white transition-all">Dismiss</button>
+                <button (click)="saveUser()"
+                    class="px-10 py-3 rounded-2xl bg-blue-600 text-white font-black text-xs uppercase tracking-widest hover:bg-blue-700 shadow-xl shadow-blue-500/20 transition-all">
+                    {{isEditing ? 'Update Records' : 'Save Records'}}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Role Modal -->
+    <div *ngIf="showRoleModal"
+        class="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+        <div
+            class="w-full max-w-md bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-white/20 dark:border-slate-800 overflow-hidden scale-in-center">
+            <div
+                class="p-8 border-b border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex justify-between items-center">
+                <h3 class="text-xl font-black text-slate-800 dark:text-white">{{isEditing ? 'Edit' : 'New'}} Access Role
+                </h3>
+                <button (click)="showRoleModal = false"
+                    class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700"><i
+                        class="fa-solid fa-xmark text-slate-400"></i></button>
+            </div>
+            <div class="p-10 space-y-8">
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Role Designation
+                        Name</label>
+                    <input [(ngModel)]="currentRole.name" type="text"
+                        class="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-4 text-sm font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all">
+                </div>
+
+                <div class="space-y-4">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Grant
+                        Permissions</label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div *ngFor="let p of currentRole.permissions | keyvalue"
+                            class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 group hover:border-indigo-500/20 transition-all cursor-pointer"
+                            (click)="currentRole.permissions[p.key] = !p.value">
+                            <span
+                                class="text-[10px] font-black uppercase tracking-widest text-slate-500 group-hover:text-indigo-400 transition-colors">{{p.key}}</span>
+                            <div class="w-10 h-5 rounded-full relative transition-all duration-300"
+                                [ngClass]="p.value ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'">
+                                <div class="absolute w-4 h-4 bg-white rounded-full top-0.5 transition-all duration-300 shadow-md"
+                                    [style.left]="p.value ? '22px' : '2px'"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-8 bg-slate-50 dark:bg-slate-800/80 flex justify-end gap-4">
+                <button (click)="saveRole()"
+                    class="w-full py-4 rounded-2xl bg-indigo-600 text-white font-black text-xs uppercase tracking-widest hover:bg-indigo-700 shadow-xl shadow-indigo-500/20 transition-all">
+                    Finalize Role Configuration
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Designation Modal -->
+    <div *ngIf="showDesignationModal"
+        class="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+        <div
+            class="w-full max-w-sm bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-white/20 dark:border-slate-800 overflow-hidden scale-in-center">
+            <div
+                class="p-8 border-b border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex justify-between items-center">
+                <h3 class="text-lg font-black text-slate-800 dark:text-white">{{isEditing ? 'Edit' : 'New'}} Position
+                </h3>
+                <button (click)="showDesignationModal = false"><i class="fa-solid fa-xmark text-slate-400"></i></button>
+            </div>
+            <div class="p-8 space-y-6">
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Position
+                        Identity</label>
+                    <input [(ngModel)]="currentDesignation.name" type="text" placeholder="e.g. Chief Engineer"
+                        class="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-4 text-sm font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-cyan-500 transition-all">
+                </div>
+                <button (click)="saveDesignation()"
+                    class="w-full py-4 rounded-2xl bg-cyan-600 text-white font-black text-xs uppercase tracking-widest hover:bg-cyan-700 shadow-xl shadow-cyan-500/20 transition-all">
+                    Register Position
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="fixed bottom-8 right-8 z-[400] space-y-4">
+        <div *ngFor="let t of toasts"
+            class="min-w-[320px] p-5 rounded-2xl bg-white dark:bg-slate-800 shadow-2xl border-l-[6px] float-right clear-both scale-in-center flex items-start gap-4"
+            [ngClass]="{
+                'border-emerald-500 shadow-emerald-500/10': t.type === 'success',
+                'border-rose-500 shadow-rose-500/10': t.type === 'error',
+                'border-blue-500 shadow-blue-500/10': t.type === 'info'
+            }">
+            <div class="p-3 rounded-xl" [ngClass]="{
+                    'bg-emerald-500/10 text-emerald-500': t.type === 'success',
+                    'bg-rose-500/10 text-rose-500': t.type === 'error',
+                    'bg-blue-500/10 text-blue-500': t.type === 'info'
+                }">
+                <i class="fa-solid"
+                    [ngClass]="t.type === 'success' ? 'fa-circle-check' : t.type === 'error' ? 'fa-triangle-exclamation' : 'fa-circle-info'"></i>
+            </div>
+            <div class="flex-1">
+                <h4 class="text-sm font-black text-slate-800 dark:text-white leading-none capitalize">{{t.title}}</h4>
+                <p class="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-1.5">{{t.message}}</p>
+            </div>
+            <button (click)="removeToast(t.id)" class="text-slate-300 hover:text-slate-500 transition-colors">
+                <i class="fa-solid fa-xmark text-xs"></i>
+            </button>
+        </div>
+    </div>
+</div>

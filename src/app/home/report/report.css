@@ -1,0 +1,124 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+}
+
+/* Custom Scrollbar for the table */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.2);
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.4);
+}
+
+/* Fix for Date Picker Icon Color in Dark Mode */
+.report-date-input::-webkit-calendar-picker-indicator {
+    filter: none;
+    cursor: pointer;
+    opacity: 0.6;
+}
+
+:host-context(.dark) .report-date-input::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+}
+
+.report-date-input:focus {
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+/* Ensure table rows stay aligned */
+table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+td,
+th {
+    white-space: nowrap;
+}
+
+/* Animation for loading spinner */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* PrimeNG UI Stabilizers */
+::ng-deep .p-datepicker,
+::ng-deep .p-select,
+::ng-deep .p-selectbutton,
+::ng-deep .p-selectbutton .p-button {
+    height: 42px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+}
+
+::ng-deep .p-datepicker input,
+::ng-deep .p-select .p-select-label,
+::ng-deep .p-selectbutton .p-button {
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+}
+
+/* Premium Select Button Overrides */
+::ng-deep .premium-select-button .p-button {
+    background: transparent !important;
+    border: none !important;
+    color: #94a3b8 !important;
+    transition: all 0.2s ease !important;
+    border-radius: 0.75rem !important;
+}
+
+::ng-deep .premium-select-button .p-button.p-highlight {
+    background: white !important;
+    color: #2563eb !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.dark ::ng-deep .premium-select-button .p-button.p-highlight {
+    background: #1e293b !important;
+    color: #60a5fa !important;
+}
+
+/* Theme Awareness Overrides */
+.dark ::ng-deep .p-datepicker,
+.dark ::ng-deep .p-select,
+.dark ::ng-deep .p-datepicker-panel,
+.dark ::ng-deep .p-select-panel,
+.dark ::ng-deep .p-overlay {
+    background: #0f172a !important;
+    border-color: #1e293b !important;
+    color: #f8fafc !important;
+}
+
+/* Ensure Overlays stay on top */
+::ng-deep .p-datepicker-panel,
+::ng-deep .p-select-panel,
+::ng-deep .p-overlay {
+    z-index: 999999 !important;
+}
