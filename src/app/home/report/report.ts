@@ -10,6 +10,7 @@ import autoTable from 'jspdf-autotable';
 // PrimeNG v21 Module Imports
 import { DatePickerModule } from 'primeng/datepicker';
 import { SelectButtonModule } from 'primeng/selectbutton';
+import { HighlightPipe } from './highlight.pipe';
 
 interface ReportColumn {
   label: string;
@@ -20,7 +21,7 @@ interface ReportColumn {
 @Component({
   selector: 'app-report',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePickerModule, SelectButtonModule],
+  imports: [CommonModule, FormsModule, DatePickerModule, SelectButtonModule, HighlightPipe],
   templateUrl: './report.html',
   styleUrl: './report.css'
 })
@@ -29,22 +30,24 @@ export class Report implements OnInit {
   @Input() sensorConfigs: any[] = [];
   reportData: any[] = [];
   reportColumns: ReportColumn[] = [
-    { label: 'Wind speed', key: 'uv', visible: true },
-    { label: 'Wind UY', key: 'uy', visible: true },
-    { label: 'Wind UZ', key: 'uz', visible: true },
-    { label: 'Rain (mm)', key: 'rain', visible: true },
-    { label: 'Temp (°C)', key: 'temp', visible: true },
-    { label: 'Solar (W/m²)', key: 'solar', visible: true },
-    { label: 'Humidity (%)', key: 'humidity', visible: true },
-    { label: 'Pressure (hPa)', key: 'pressure', visible: true },
-    { label: 'Battery (%)', key: 'battery', visible: true },
+    { label: 'Wind U', key: 'uv', visible: true },
+    { label: 'Wind V', key: 'uy', visible: true },
+    { label: 'Wind W', key: 'uz', visible: true },
+    { label: 'SOS', key: 'sos', visible: true },
+    { label: 'Rainfall', key: 'rain', visible: true },
+    { label: 'Temp', key: 'temp', visible: true },
+    { label: 'Solar', key: 'solar', visible: true },
+    { label: 'Humidity', key: 'humidity', visible: true },
+    { label: 'Pressure', key: 'pressure', visible: true },
+    { label: 'Battery', key: 'battery', visible: true },
     { label: 'Wind Speed', key: 'wind_speed', visible: true },
     { label: 'Wind Direction', key: 'wind_direction', visible: true }
   ];
 
-  selectedTimeScale: string = 'Day';
+  selectedTimeScale: string = 'Hour';
   selectedDate: Date = new Date();
   timeScales = [
+    { label: 'Hour', value: 'Hour' },
     { label: 'Day', value: 'Day' },
     { label: 'Week', value: 'Week' },
     { label: 'Month', value: 'Month' },
@@ -55,6 +58,7 @@ export class Report implements OnInit {
   currentPage: number = 1;
   itemsPerPage: number = 10;
   itemsPerPageOptions: number[] = [10, 15, 20];
+  searchTerm: string = '';
 
   constructor(private api: ApiService, private cdr: ChangeDetectorRef, private conversionService: UnitConversionService) { }
 
@@ -62,14 +66,30 @@ export class Report implements OnInit {
     this.fetchData();
   }
 
+  get filteredData(): any[] {
+    if (!this.searchTerm.trim()) return this.reportData;
+    const term = this.searchTerm.trim().toLowerCase();
+
+    return this.reportData.filter(row => {
+      // Check visible columns and timestamps
+      const visibleKeys = this.reportColumns.filter(c => c.visible).map(c => c.key);
+      const keysToSearch = ['date', 'time', ...visibleKeys];
+
+      return keysToSearch.some(key => {
+        const val = row[key];
+        return val !== null && val !== undefined && String(val).toLowerCase().includes(term);
+      });
+    });
+  }
+
   get paginatedData(): any[] {
     const startIndex = (this.currentPage - 1) * this.itemsPerPage;
     const endIndex = startIndex + this.itemsPerPage;
-    return this.reportData.slice(startIndex, endIndex);
+    return this.filteredData.slice(startIndex, endIndex);
   }
 
   get totalPages(): number {
-    return Math.max(1, Math.ceil(this.reportData.length / this.itemsPerPage));
+    return Math.max(1, Math.ceil(this.filteredData.length / this.itemsPerPage));
   }
 
   get pageNumbers(): number[] {
@@ -89,6 +109,11 @@ export class Report implements OnInit {
   onDateChange() {
     this.currentPage = 1;
     this.fetchData();
+  }
+
+  onSearchChange() {
+    this.currentPage = 1;
+    this.cdr.markForCheck();
   }
 
   applyConversion(val: number, paramId: string): number {
@@ -118,18 +143,25 @@ export class Report implements OnInit {
 
     try {
       const { start, end } = this.getDateRange();
-      const data = await this.api.getFilteredWindData(start, end);
+      let step = 1;
+      let limit = 5000;
+
+      if (this.selectedTimeScale === 'Day') step = 10; // Every 10th record (6 records/min) for 24h = 8640 records
+      else if (this.selectedTimeScale !== 'Hour') step = 60; // Every 60th record (1 record/min) for larger ranges
+
+      const data = await this.api.getFilteredWindData(start, end, limit, step);
 
       this.reportData = data.map(item => ({
         date: new Date(item.datetime).toLocaleString('en-US', {
           month: 'short', day: 'numeric', year: 'numeric'
         }),
         time: new Date(item.datetime).toLocaleTimeString('en-US', {
-          hour: '2-digit', minute: '2-digit', hour12: false
+          hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
         }),
         uv: Number(this.applyConversion(item.wind_uv || 0, 'wind_ux')).toFixed(2),
         uy: Number(this.applyConversion(item.wind_uy || 0, 'wind_uy')).toFixed(2),
         uz: Number(this.applyConversion(item.wind_uz || 0, 'wind_uz')).toFixed(2),
+        sos: Number(item.sos || 0).toFixed(2),
         rain: Number(this.applyConversion(item.rain_fall || 0, 'rain')).toFixed(2),
         temp: Number(this.applyConversion(item.temp || 0, 'temp')).toFixed(2),
         solar: Number(this.applyConversion(item.solar_rad || 0, 'solar')).toFixed(2),
@@ -157,7 +189,10 @@ export class Report implements OnInit {
     let start = new Date(y, m, d, 0, 0, 0, 0);
     let end = new Date(y, m, d, 23, 59, 59, 999);
 
-    if (this.selectedTimeScale === 'Week') {
+    if (this.selectedTimeScale === 'Hour') {
+      start = new Date(selected.getTime() - (60 * 60 * 1000));
+      end = selected;
+    } else if (this.selectedTimeScale === 'Week') {
       end.setDate(start.getDate() + 7);
     } else if (this.selectedTimeScale === 'Month') {
       start.setDate(1);

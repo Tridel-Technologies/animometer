@@ -331,17 +331,19 @@
                     <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Grant
                         Permissions</label>
                     <div class="grid grid-cols-2 gap-4">
-                        <div *ngFor="let p of currentRole.permissions | keyvalue"
-                            class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 group hover:border-indigo-500/20 transition-all cursor-pointer"
-                            (click)="currentRole.permissions[p.key] = !p.value">
-                            <span
-                                class="text-[10px] font-black uppercase tracking-widest text-slate-500 group-hover:text-indigo-400 transition-colors">{{p.key}}</span>
-                            <div class="w-10 h-5 rounded-full relative transition-all duration-300"
-                                [ngClass]="p.value ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'">
-                                <div class="absolute w-4 h-4 bg-white rounded-full top-0.5 transition-all duration-300 shadow-md"
-                                    [style.left]="p.value ? '22px' : '2px'"></div>
+                        <ng-container *ngFor="let p of currentRole.permissions | keyvalue">
+                            <div *ngIf="p.key !== 'users' || currentRole.name === 'Administrator'"
+                                class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 group hover:border-indigo-500/20 transition-all cursor-pointer"
+                                (click)="currentRole.permissions[p.key] = !p.value">
+                                <span
+                                    class="text-[10px] font-black uppercase tracking-widest text-slate-500 group-hover:text-indigo-400 transition-colors">{{p.key}}</span>
+                                <div class="w-10 h-5 rounded-full relative transition-all duration-300"
+                                    [ngClass]="p.value ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'">
+                                    <div class="absolute w-4 h-4 bg-white rounded-full top-0.5 transition-all duration-300 shadow-md"
+                                        [style.left]="p.value ? '22px' : '2px'"></div>
+                                </div>
                             </div>
-                        </div>
+                        </ng-container>
                     </div>
                 </div>
             </div>

@@ -45,6 +45,12 @@ const updateUser = async (req, res) => {
 const deleteUser = async (req, res) => {
     const { id } = req.params;
     try {
+        // Prevent deleting Administrator
+        const userCheck = await pool.query('SELECT role FROM users WHERE id = $1', [id]);
+        if (userCheck.rows.length > 0 && userCheck.rows[0].role === 'Administrator') {
+            return res.status(403).json({ error: 'Administrator user cannot be deleted' });
+        }
+        
         await pool.query('DELETE FROM users WHERE id = $1', [id]);
         res.status(200).json({ message: 'User deleted successfully' });
     } catch (error) {

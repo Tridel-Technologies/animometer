@@ -56,16 +56,18 @@
 
                         <!-- Footer -->
                         <div class="relative flex items-end justify-between w-full mt-auto z-10 pointer-events-none">
-                            <div class="flex items-baseline gap-1" [ngClass]="isExceedingThreshold(w) ? 'text-red-600 dark:text-red-400' : ''">
-                                <div class="text-4xl font-extrabold tracking-tighter drop-shadow-sm text-gray-800 dark:text-white">
+                            <div class="flex items-baseline gap-1">
+                                <div class="text-4xl font-extrabold tracking-tighter drop-shadow-sm"
+                                    [ngClass]="isExceedingThreshold(w) ? 'text-red-600 dark:text-red-400' : 'text-gray-800 dark:text-white'">
                                     {{w.val | number:(w.id === 'battery' ? '1.2-2' : '1.1-1')}}
                                 </div>
-                                <span class="text-[15px] font-bold text-blue-600 dark:text-blue-400">{{w.unit}}</span>
+                                <span class="text-[15px] font-bold"
+                                    [ngClass]="isExceedingThreshold(w) ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'">{{w.unit}}</span>
                             </div>
                             <div class="flex flex-col items-end text-[10px] font-semibold text-gray-400 dark:text-slate-400">
-                                <span>{{getMin(w.trend) | number:(w.id === 'battery' ? '1.2-2' : '1.1-1')}} / {{getMax(w.trend) | number:(w.id ===
+                                <span class="uppercase tracking-widest opacity-80 text-[8px] mb-0.5">MIN: {{getMin(w.trend) | number:(w.id === 'battery'
+                                    ? '1.2-2' : '1.1-1')}} | MAX: {{getMax(w.trend) | number:(w.id ===
                                     'battery' ? '1.2-2' : '1.1-1')}}</span>
-                                <span class="text-[9px] uppercase tracking-widest opacity-80 mt-0.5">min / max</span>
                             </div>
                         </div>
                     </div>
@@ -79,7 +81,7 @@
             </div>
 
             <!-- Bottom Bar: Status Area -->
-            <div style="flex: 3; min-height: 0;" class="grid grid-cols-3 gap-4">
+            <div style="flex: 3; min-height: 0;" class="grid grid-cols-4 gap-4">
                 <!-- Trajectory Components (Charts) (66%) -->
                 <div
                     class="col-span-2 rounded-2xl bg-white/80 dark:bg-slate-800/90 backdrop-blur-sm border border-blue-200 dark:border-cyan-500/20 p-4 shadow-lg shadow-cyan-500/10 flex flex-col justify-between relative overflow-hidden group gap-2">
@@ -99,67 +101,92 @@
                         </div>
                     </div>
 
-                    <div class="flex-1 flex flex-col gap-2 z-10 min-h-0">
-                        <div
-                            class="flex-1 bg-slate-50/50 dark:bg-slate-900/50 rounded-lg border border-blue-100/50 dark:border-slate-700/50 relative">
-                            <div echarts [options]="getLineChartOption('wind_ux', isDarkMode)"
-                                [merge]="getLineChartOption('wind_ux', isDarkMode)" [autoResize]="true" class="absolute inset-0"></div>
-                        </div>
-                        <div class="flex-1 flex gap-2">
-                            <div
-                                class="flex-1 bg-slate-50/50 dark:bg-slate-900/50 rounded-lg border border-blue-100/50 dark:border-slate-700/50 relative">
-                                <div echarts [options]="getLineChartOption('wind_uy', isDarkMode)"
-                                    [merge]="getLineChartOption('wind_uy', isDarkMode)" [autoResize]="true" class="absolute inset-0"></div>
-                            </div>
-                            <div
-                                class="flex-1 bg-slate-50/50 dark:bg-slate-900/50 rounded-lg border border-blue-100/50 dark:border-slate-700/50 relative">
-                                <div echarts [options]="getLineChartOption('wind_uz', isDarkMode)"
-                                    [merge]="getLineChartOption('wind_uz', isDarkMode)" [autoResize]="true" class="absolute inset-0"></div>
-                            </div>
-                        </div>
+                    <div
+                        class="flex-1 relative z-10 min-h-0 bg-slate-50/50 dark:bg-slate-900/50 rounded-xl border border-blue-100/50 dark:border-slate-700/50 overflow-hidden">
+                        <div echarts [options]="threeDOptions" [merge]="threeDUpdate" [autoResize]="true"
+                            class="absolute inset-0"></div>
                     </div>
+                </div>
+                
+                <!-- SOS Section (25%) -->
+                <div class="col-span-1 grid grid-rows-1 gap-3">
+                    <ng-container *ngFor="let wId of ['sos']">
+                        <div *ngIf="getWidgetById(wId) as w"
+                            class="group relative flex flex-col justify-between p-3 rounded-xl bg-gradient-to-br from-white/60 to-blue-50/60 dark:from-slate-800/60 dark:to-slate-900/60 backdrop-blur-md border border-white/50 dark:border-slate-600/30 shadow-lg hover:shadow-xl hover:shadow-cyan-500/20 dark:hover:border-cyan-400/40 hover:-translate-y-1 transition-all duration-300 overflow-hidden h-full">
+                            <div class="absolute right-0 bottom-6 w-[40%] h-[50%] opacity-100 pointer-events-none z-0">
+                                <div echarts [options]="getChartOption(w.trend, isDarkMode, w.barColor, w.id)"
+                                    [merge]="getChartOption(w.trend, isDarkMode, w.barColor, w.id)" [autoResize]="true"
+                                    class="w-full h-full mix-blend-multiply dark:mix-blend-lighten"></div>
+                            </div>
+                            <div class="relative flex items-start justify-between z-10 pointer-events-none">
+                                <div class="flex items-center gap-2">
+                                    <div
+                                            class="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-100 to-white dark:from-slate-700 dark:to-slate-800 flex items-center justify-center shadow-inner border border-white/50 dark:border-slate-600 shadow-md transition-all">
+                                            <i class="fa-solid text-sm bg-clip-text text-transparent bg-gradient-to-br" [ngClass]="[w.icon, w.barColor]"
+                                                [style.transform]="w.id === 'wind_direction' ? 'rotate(' + w.val + 'deg)' : 'none'"
+                                                [style.transition]="'transform 0.5s ease-out'"></i>
+                                        </div>
+                                        <span class="text-[12px] font-bold text-gray-700 dark:text-slate-100 tracking-wide">{{w.label}}</span>
+                                        </div>
+                                        <span class="text-[8px] font-medium text-gray-500 dark:text-slate-300 uppercase tracking-widest">LIVE</span>
+                                        </div>
+                                        <div class="relative flex items-end justify-between w-full mt-auto z-10 pointer-events-none">
+                                            <div class="flex items-baseline gap-1">
+                                                <div class="text-3xl font-extrabold tracking-tighter drop-shadow-sm"
+                                                    [ngClass]="isExceedingThreshold(w) ? 'text-red-600 dark:text-red-400' : 'text-gray-800 dark:text-white'">
+                                                    {{w.val | number:(w.id === 'wind_direction' ? '1.0-0' : '1.1-1')}}
+                                                </div>
+                                                <span class="text-[12px] font-bold"
+                                                    [ngClass]="isExceedingThreshold(w) ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'">{{w.unit}}</span>
+                                            </div>
+                                            <div class="flex flex-col items-end text-[9px] font-semibold text-gray-400 dark:text-slate-400">
+                                                <span class="uppercase tracking-widest opacity-80 text-[7px]">MIN: {{getMin(w.trend) | number:'1.1-1'}} | MAX:
+                                                    {{getMax(w.trend) | number:'1.1-1'}}</span>
+                                            </div>
+                                        </div>
+                                        </div>
+                        </ng-container>
                     </div>
-                    
-                    <!-- Wind Speed & Direction Section (33%) -->
-                    <div class="col-span-1 grid grid-rows-2 gap-4">
-                        <ng-container *ngFor="let w of [getWindSpeedCard(), getWindDirectionCard()]">
-                            <div *ngIf="w"
-                                class="group relative flex flex-col justify-between p-4 rounded-xl bg-gradient-to-br from-white/60 to-blue-50/60 dark:from-slate-800/60 dark:to-slate-900/60 backdrop-blur-md border border-white/50 dark:border-slate-600/30 shadow-lg hover:shadow-xl hover:shadow-cyan-500/20 dark:hover:border-cyan-400/40 hover:-translate-y-1 transition-all duration-300 overflow-hidden h-full">
+
+                    <!-- Wind Speed & Direction Section (25%) -->
+                    <div class="col-span-1 grid grid-rows-2 gap-3">
+                        <ng-container *ngFor="let wId of ['wind_speed', 'wind_direction']">
+                            <div *ngIf="getWidgetById(wId) as w"
+                                class="group relative flex flex-col justify-between p-3 rounded-xl bg-gradient-to-br from-white/60 to-blue-50/60 dark:from-slate-800/60 dark:to-slate-900/60 backdrop-blur-md border border-white/50 dark:border-slate-600/30 shadow-lg hover:shadow-xl hover:shadow-cyan-500/20 dark:hover:border-cyan-400/40 hover:-translate-y-1 transition-all duration-300 overflow-hidden h-full">
                                 <div class="absolute right-0 bottom-6 w-[40%] h-[50%] opacity-100 pointer-events-none z-0">
                                     <div echarts [options]="getChartOption(w.trend, isDarkMode, w.barColor, w.id)"
                                         [merge]="getChartOption(w.trend, isDarkMode, w.barColor, w.id)" [autoResize]="true"
                                         class="w-full h-full mix-blend-multiply dark:mix-blend-lighten"></div>
-                            </div>
-                            <div class="relative flex items-start justify-between z-10 pointer-events-none">
-                                <div class="flex items-center gap-3">
-                                    <div
-                                        class="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-100 to-white dark:from-slate-700 dark:to-slate-800 flex items-center justify-center shadow-inner border border-white/50 dark:border-slate-600 shadow-md group-hover:shadow-cyan-400/30 transition-all">
-                                        <i class="fa-solid text-lg bg-clip-text text-transparent bg-gradient-to-br" [ngClass]="[w.icon, w.barColor]"
-                                            [style.transform]="w.id === 'wind_direction' ? 'rotate(' + w.val + 'deg)' : 'none'"
-                                            [style.transition]="'transform 0.5s ease-out'"></i>
-                                    </div>
-                                    <span class="text-[14px] font-bold text-gray-700 dark:text-slate-100 tracking-wide">{{w.label}}</span>
-                                    </div>
-                                <div class="flex items-center gap-1">
-                                    <div class="w-1.5 h-1.5 rounded-full bg-blue-500/50"></div>
-                                    <span class="text-[9px] font-medium text-gray-500 dark:text-slate-300 uppercase tracking-widest">LIVE</span>
                                 </div>
-                                </div>
-<div class="relative flex items-end justify-between w-full mt-auto z-10 pointer-events-none">
-    <div class="flex items-baseline gap-1" [ngClass]="isExceedingThreshold(w) ? 'text-red-600 dark:text-red-400' : ''">
-        <div class="text-4xl font-extrabold tracking-tighter drop-shadow-sm text-gray-800 dark:text-white">
-            {{w.val | number:(w.id === 'wind_direction' ? '1.0-0' : '1.1-1')}}
+                                <div class="relative flex items-start justify-between z-10 pointer-events-none">
+                                    <div class="flex items-center gap-2">
+                                        <div
+                                            class="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-100 to-white dark:from-slate-700 dark:to-slate-800 flex items-center justify-center shadow-inner border border-white/50 dark:border-slate-600 shadow-md transition-all">
+                                            <i class="fa-solid text-sm bg-clip-text text-transparent bg-gradient-to-br" [ngClass]="[w.icon, w.barColor]"
+                                                [style.transform]="w.id === 'wind_direction' ? 'rotate(' + w.val + 'deg)' : 'none'"
+                                                [style.transition]="'transform 0.5s ease-out'"></i>
+                                        </div>
+                                        <span class="text-[12px] font-bold text-gray-700 dark:text-slate-100 tracking-wide">{{w.label}}</span>
                                     </div>
-                                    <span class="text-[15px] font-bold text-blue-600 dark:text-blue-400">{{w.unit}}</span>
-                                    </div>
-                                <div class="flex flex-col items-end text-[10px] font-semibold text-gray-400 dark:text-slate-400">
-                                    <span>{{getMin(w.trend) | number:'1.1-1'}} / {{getMax(w.trend) | number:'1.1-1'}}</span>
-                                    <span class="text-[9px] uppercase tracking-widest opacity-80 mt-0.5">min / max</span>
+                                    <span class="text-[8px] font-medium text-gray-500 dark:text-slate-300 uppercase tracking-widest">LIVE</span>
                                 </div>
-                            </div>
-                        </div>
-                    </ng-container>
-                </div>
+                                <div class="relative flex items-end justify-between w-full mt-auto z-10 pointer-events-none">
+                                    <div class="flex items-baseline gap-1">
+                                        <div class="text-3xl font-extrabold tracking-tighter drop-shadow-sm"
+                                            [ngClass]="isExceedingThreshold(w) ? 'text-red-600 dark:text-red-400' : 'text-gray-800 dark:text-white'">
+                                            {{w.val | number:(w.id === 'wind_direction' ? '1.0-0' : '1.1-1')}}
+                                        </div>
+                                        <span class="text-[12px] font-bold"
+                                            [ngClass]="isExceedingThreshold(w) ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'">{{w.unit}}</span>
+                                    </div>
+                                    <div class="flex flex-col items-end text-[9px] font-semibold text-gray-400 dark:text-slate-400">
+                                        <span class="uppercase tracking-widest opacity-80 text-[7px]">MIN: {{getMin(w.trend) | number:'1.1-1'}} | MAX:
+                                            {{getMax(w.trend) | number:'1.1-1'}}</span>
+                                    </div>
+                                    </div>
+                                    </div>
+                                    </ng-container>
+                                    </div>
                 </div>
                 </div>
 
@@ -205,21 +232,21 @@
         Status</h3>
     <div class="flex-1 flex flex-col gap-2 min-h-0">
         <div *ngFor="let s of getSensorStatuses()"
-            class="flex items-center justify-between bg-white/95 dark:bg-slate-800/90 rounded-xl px-4 py-2 border border-blue-50/50 dark:border-slate-700/50 hover:shadow-sm transition-all h-[22%]">
+            class="flex items-center justify-between bg-white/95 dark:bg-slate-800/90 rounded-xl px-4 py-1.5 border border-blue-50/50 dark:border-slate-700/50 hover:shadow-sm transition-all h-[18%]">
             <div class="flex items-center gap-3">
                 <div
-                    class="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700 flex items-center justify-center border border-slate-100 dark:border-slate-600">
-                    <i class="fa-solid" [ngClass]="[s.icon, 'text-blue-500 dark:text-cyan-400 text-sm']"></i>
+                    class="w-7 h-7 rounded-lg bg-slate-50 dark:bg-slate-700 flex items-center justify-center border border-slate-100 dark:border-slate-600">
+                    <i class="fa-solid" [ngClass]="[s.icon, 'text-blue-500 dark:text-cyan-400 text-xs']"></i>
                 </div>
-                                <span class="text-[12px] font-bold text-slate-700 dark:text-slate-200">{{s.label}}</span>
-                            </div>
-                            <div class="flex items-center gap-4">
-                                <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400">{{s.time}}</span>
-                                <div
-                                    [class]="'w-2.5 h-2.5 rounded-full blur-[1px] ' + (s.status === 'online' ? 'bg-emerald-400 shadow-[0_0_5px_#10b981]' : 'bg-rose-400 shadow-[0_0_5px_#f43f5e]')">
-                                </div>
-                            </div>
-                        </div>
+                <span class="text-[11px] font-bold text-slate-700 dark:text-slate-200">{{s.label}}</span>
+                </div>
+            <div class="flex items-center gap-3">
+                <span class="text-[8px] font-bold text-slate-500 dark:text-slate-400">{{s.time}}</span>
+                <div
+                    [class]="'w-2 h-2 rounded-full blur-[1px] ' + (s.status === 'online' ? 'bg-emerald-400 shadow-[0_0_5px_#10b981]' : 'bg-rose-400 shadow-[0_0_5px_#f43f5e]')">
+                </div>
+            </div>
+        </div>
                     </div>
                 </div>
             </div>

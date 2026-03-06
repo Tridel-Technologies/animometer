@@ -1,5 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 
 interface CurrentUser {
   name: string;
@@ -17,11 +18,13 @@ interface CurrentUser {
   styleUrl: './profile.css',
 })
 export class Profile {
-  @Input() currentUser: CurrentUser = {
-    name: '',
-    role: '',
-    email: '',
-    vessel: '',
-    lastLogin: ''
-  };
+  @Input() currentUser: any = {};
+
+  constructor(private router: Router) { }
+
+  logout() {
+    localStorage.removeItem('station_user');
+    localStorage.removeItem('station_token');
+    this.router.navigate(['/login']);
+  }
 }

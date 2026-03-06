@@ -40,19 +40,21 @@ export class Analysis implements OnInit, OnDestroy, AfterViewInit {
   private resizeObserver: ResizeObserver | null = null;
 
   timeScales = [
+    { label: 'Hour', value: 'Hour' },
     { label: 'Day', value: 'Day' },
     { label: 'Week', value: 'Week' },
     { label: 'Month', value: 'Month' },
     { label: 'Year', value: 'Year' }
   ];
 
-  selectedTimeScale: string = 'Day';
+  selectedTimeScale: string = 'Hour';
   selectedDate: Date = new Date();
 
   parameters = [
-    { label: 'Wind UX', key: 'uv', selected: true, color: '#22d3ee' },
-    { label: 'Wind UY', key: 'uy', selected: true, color: '#10b981' },
-    { label: 'Wind UZ', key: 'uz', selected: true, color: '#f59e0b' },
+    { label: 'Wind U', key: 'uv', selected: true, color: '#22d3ee' },
+    { label: 'Wind V', key: 'uy', selected: true, color: '#10b981' },
+    { label: 'Wind W', key: 'uz', selected: true, color: '#f59e0b' },
+    { label: 'SOS', key: 'sos', selected: true, color: '#6366f1' },
     { label: 'Rainfall', key: 'rain', selected: true, color: '#3b82f6' },
     { label: 'Temp', key: 'temp', selected: true, color: '#ef4444' },
     { label: 'Solar', key: 'solar', selected: true, color: '#facc15' },
@@ -119,7 +121,11 @@ export class Analysis implements OnInit, OnDestroy, AfterViewInit {
 
     try {
       const { start, end } = this.getDateRange();
-      const rawData = await this.api.getFilteredWindData(start, end);
+      const limit = this.selectedTimeScale === 'Hour' ? 3600 : 3000;
+
+      const rawData = this.selectedTimeScale === 'Hour'
+        ? await this.api.getLatestHourData()
+        : await this.api.getFilteredWindData(start, end, limit); 
 
       // Intelligent Downsampling for performance
       const maxPoints = 500;
@@ -134,6 +140,7 @@ export class Analysis implements OnInit, OnDestroy, AfterViewInit {
         uv: this.applyConversion(Number(item.wind_uv || 0), 'wind_ux'),
         uy: this.applyConversion(Number(item.wind_uy || 0), 'wind_uy'),
         uz: this.applyConversion(Number(item.wind_uz || 0), 'wind_uz'),
+        sos: Number(item.sos || 0),
         rain: this.applyConversion(Number(item.rain_fall || 0), 'rain'),
         temp: this.applyConversion(Number(item.temp || 0), 'temp'),
         solar: this.applyConversion(Number(item.solar_rad || 0), 'solar'),
@@ -162,7 +169,10 @@ export class Analysis implements OnInit, OnDestroy, AfterViewInit {
     let start = new Date(y, m, d, 0, 0, 0, 0);
     let end = new Date(y, m, d, 23, 59, 59, 999);
 
-    if (this.selectedTimeScale === 'Week') {
+    if (this.selectedTimeScale === 'Hour') {
+      start = new Date(selected.getTime() - (60 * 60 * 1000));
+      end = selected;
+    } else if (this.selectedTimeScale === 'Week') {
       end.setDate(start.getDate() + 7);
     } else if (this.selectedTimeScale === 'Month') {
       start.setDate(1);

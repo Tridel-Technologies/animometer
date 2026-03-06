@@ -34,6 +34,15 @@
                         styleClass="w-48" appendTo="body"></p-datepicker>
                 </div>
             </div>
+            
+            <!-- Search -->
+            <div class="flex items-center">
+                <div class="relative">
+                    <input type="text" [(ngModel)]="searchTerm" (input)="onSearchChange()" placeholder="Search records..."
+                        class="pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-800 dark:text-white w-64 focus:ring-2 focus:ring-blue-500 transition-all outline-none placeholder:text-slate-400">
+                    <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                </div>
+            </div>
 
             <!-- Export Actions -->
             <div class="flex items-center gap-3">
@@ -91,13 +100,14 @@
                     <tr *ngFor="let row of paginatedData" class="group hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-colors">
                         <td class="p-4">
                             <div class="flex flex-col gap-0.5 whitespace-nowrap">
-                                <span class="text-xs font-black text-slate-800 dark:text-white">{{ row.date }}</span>
-                                <span class="text-[10px] font-bold text-slate-400 font-mono">{{ row.time }}</span>
+                                <span class="text-xs font-black text-slate-800 dark:text-white" [innerHTML]="row.date | highlight:searchTerm"></span>
+                                <span class="text-[10px] font-bold text-slate-400 font-mono" [innerHTML]="row.time | highlight:searchTerm"></span>
                             </div>
                         </td>
                         <ng-container *ngFor="let col of reportColumns">
                             <td *ngIf="col.visible" class="p-4">
-                                <span class="text-sm font-bold text-slate-700 dark:text-slate-200">{{ row[col.key] }}</span>
+                                <span class="text-sm font-bold text-slate-700 dark:text-slate-200"
+                                    [innerHTML]="row[col.key] | highlight:searchTerm"></span>
                             </td>
                         </ng-container>
                     </tr>
@@ -131,7 +141,7 @@
 
             <div class="text-[11px] font-bold text-slate-500 dark:text-slate-400">
                 Page <span class="text-slate-800 dark:text-white">{{ currentPage }}</span> of {{ totalPages }} | <span
-                    class="text-blue-600">{{ reportData.length }}</span> Total Logs
+                    class="text-blue-600">{{ filteredData.length }}</span> Total Logs
             </div>
 
             <div class="flex items-center gap-2">

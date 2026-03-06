@@ -1,0 +1,114 @@
+<div class="login-container">
+    <!-- Header Logos -->
+    <div class="header-logos">
+        <img src="/assets/tridel.png" alt="Tridel Logo">
+        <img src="/assets/niot.png" alt="NIOT Logo">
+    </div>
+
+    <div class="scene">
+        <div class="card" [class.is-flipped]="isFlipped">
+            
+            <!-- Login Front Card -->
+            <div class="card-face card-face-front">
+                <div class="logo-section">
+                    <div class="logo-icon">
+                        <i class="fa-solid fa-user-shield"></i>
+                    </div>
+                    <h1 class="title">Terra</h1>
+                </div>
+
+                <form (submit)="onLogin($event)" #loginForm="ngForm">
+                    <div class="form-group">
+                        <label class="label">Email Address</label>
+                        <div class="input-wrapper">
+                            <input type="email" name="email" [(ngModel)]="email" class="input" placeholder="name@company.com" required email>
+                            <i class="fa-solid fa-envelope"></i>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="label">Password</label>
+                        <div class="input-wrapper">
+                            <input type="password" name="password" [(ngModel)]="password" class="input" placeholder="••••••••" required>
+                            <i class="fa-solid fa-lock"></i>
+                        </div>
+                    </div>
+
+                    <div class="actions">
+                        <button type="button" class="link-btn" (click)="toggleFlip()">Forgot Password?</button>
+                    </div>
+
+                    <p *ngIf="loginError" class="error-msg fade-in">{{loginError}}</p>
+
+                    <button type="submit" class="btn-primary" [disabled]="isLoading || !loginForm.valid">
+                        <span *ngIf="!isLoading">Login</span>
+                        <i *ngIf="!isLoading" class="fa-solid fa-right-to-bracket"></i>
+                        <i *ngIf="isLoading" class="fa-solid fa-circle-notch fa-spin"></i>
+                    </button>
+                </form>
+
+                <div class="footer">
+                    <p>&copy; Tridel Technologies. <b>Authorized Access Only.</b></p>
+                </div>
+            </div>
+
+            <!-- Forgot Password Back Card -->
+            <div class="card-face card-face-back">
+                <div class="logo-section">
+                    <div class="logo-icon">
+                        <i class="fa-solid fa-key"></i>
+                    </div>
+                    <h1 class="title">Reset</h1>
+                </div>
+
+                <div *ngIf="!emailVerified">
+                    <div class="form-group">
+                        <label class="label">Verification Email</label>
+                        <div class="input-wrapper">
+                            <input type="email" name="forgotEmail" [(ngModel)]="forgotEmail" class="input" placeholder="name@company.com" required email>
+                            <i class="fa-solid fa-envelope"></i>
+                        </div>
+                    </div>
+                    <p *ngIf="resetError" class="error-msg fade-in">{{resetError}}</p>
+                    <button class="btn-primary" (click)="verifyEmail()" [disabled]="isLoading || !forgotEmail">
+                        <span *ngIf="!isLoading">Verify Email</span>
+                        <i *ngIf="isLoading" class="fa-solid fa-circle-notch fa-spin"></i>
+                    </button>
+                </div>
+
+                <div *ngIf="emailVerified" class="fade-in">
+                    <div class="form-group">
+                        <label class="label">New Password</label>
+                        <div class="input-wrapper">
+                            <input type="password" name="newPassword" [(ngModel)]="newPassword" class="input" placeholder="••••••••" required>
+                            <i class="fa-solid fa-lock"></i>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="label">Confirm New Password</label>
+                        <div class="input-wrapper">
+                            <input type="password" name="confirmPassword" [(ngModel)]="confirmPassword" class="input" placeholder="••••••••" required>
+                            <i class="fa-solid fa-shield-check"></i>
+                        </div>
+                    </div>
+                    <p *ngIf="resetError" class="error-msg fade-in">{{resetError}}</p>
+                    <button class="btn-primary" (click)="onResetPassword()" [disabled]="isLoading || !newPassword || newPassword !== confirmPassword">
+                        <span *ngIf="!isLoading">Set New Password</span>
+                        <i *ngIf="isLoading" class="fa-solid fa-circle-notch fa-spin"></i>
+                    </button>
+                </div>
+
+                <div class="actions" style="margin-top: 20px; justify-content: center;">
+                    <button type="button" class="link-btn" (click)="toggleFlip()">
+                        <i class="fa-solid fa-arrow-left"></i> Back to Login
+                    </button>
+                </div>
+
+                <div class="footer">
+                    <p>&copy; Tridel Technologies. <b>Authorized Access Only.</b></p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

@@ -19,6 +19,7 @@ export interface WindData {
   battery?: number;
   wind_speed?: number;
   wind_direction?: number;
+  sos?: number;
 }
 
 @Injectable({
@@ -53,14 +54,25 @@ export class ApiService {
     }
   }
 
-  async getFilteredWindData(startDate: string, endDate: string): Promise<WindData[]> {
+  async getFilteredWindData(startDate: string, endDate: string, limit?: number, step?: number): Promise<WindData[]> {
     try {
-      const response = await lastValueFrom(
-        this.http.get<WindData[]>(`${this.getApiUrl('wind-data')}?startDate=${startDate}&endDate=${endDate}`)
-      );
+      let url = `${this.getApiUrl('wind-data')}?startDate=${startDate}&endDate=${endDate}`;
+      if (limit) url += `&limit=${limit}`;
+      if (step) url += `&step=${step}`;
+      const response = await lastValueFrom(this.http.get<WindData[]>(url));
       return response || [];
     } catch (error) {
       console.error('Error fetching filtered wind data:', error);
+      return [];
+    }
+  }
+
+  async getLatestHourData(): Promise<WindData[]> {
+    try {
+      const response = await lastValueFrom(this.http.get<WindData[]>(this.getApiUrl('latest-hour')));
+      return response || [];
+    } catch (error) {
+      console.error('Error fetching latest hour data:', error);
       return [];
     }
   }
@@ -154,5 +166,18 @@ export class ApiService {
 
   updateStation(name: string, parameters_list: any[] = []): Promise<any> {
     return lastValueFrom(this.http.post<any>(this.getApiUrl('station'), { name, parameters_list }));
+  }
+
+  // Authentication
+  login(credentials: any): Promise<any> {
+    return lastValueFrom(this.http.post<any>(this.getApiUrl('login'), credentials));
+  }
+
+  checkEmail(email: string): Promise<any> {
+    return lastValueFrom(this.http.post<any>(this.getApiUrl('check-email'), { email }));
+  }
+
+  resetPassword(data: any): Promise<any> {
+    return lastValueFrom(this.http.post<any>(this.getApiUrl('reset-password'), data));
   }
 }

@@ -112,8 +112,12 @@ export class UnitConversionService {
 
     // Battery
     if (paramId === 'battery') {
-      const base = value / (this.batteryFactors[fromUnit] || 1);
-      return base * (this.batteryFactors[toUnit] || 1);
+      const volts = value / (this.batteryFactors[fromUnit] || 1); // Get to V
+      if (toUnit === '%') {
+        // 12.4V = 100%
+        return Math.min(100, (volts / 12.4) * 100);
+      }
+      return volts * (this.batteryFactors[toUnit] || 1);
     }
 
     return value; // Default no conversion (e.g. Humidity % or unknown)

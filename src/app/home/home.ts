@@ -1,5 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, input, OnChanges, OnInit, SimpleChanges, OnDestroy, AfterViewInit, Renderer2, ChangeDetectorRef } from '@angular/core';
+import { ActivatedRoute, Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import * as echarts from 'echarts';
 import Plotly from 'plotly.js-dist-min';
 import { FormsModule } from '@angular/forms';
@@ -22,9 +24,10 @@ import { UnitConversionService } from '../apiService/unit-conversion.service';
 import { ThemeService } from '../theme.service';
 
 interface AnemometerData {
-  uv: number;
-  uy: number;
-  uz: number;
+  u: number;
+  v: number;
+  w: number;
+  sos: number;
   rain: number;
   temp: number;
   solar: number;
@@ -42,6 +45,7 @@ interface NavItem {
   icon: string;
   label: string;
 }
+
 @Component({
   selector: 'app-home',
   standalone: true,
@@ -51,14 +55,16 @@ interface NavItem {
 export class Home implements OnInit, OnDestroy, AfterViewInit {
   // Dual-scale trend buffers
   fullDayTrends: { [key: string]: any[] } = {
-    wind_ux: [],
-    wind_uy: [],
-    wind_uz: []
+    u: [],
+    v: [],
+    w: [],
+    sos: []
   };
 
   isDarkMode: boolean = true; // Start with light mode
   expandedSideBar: boolean = true;
   lastDataTimestamp: number = 0;
+  activeTab: string = 'dashboard';
 
   get systemStatus(): 'online' | 'partial' | 'offline' {
     const now = Date.now();
@@ -110,8 +116,17 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
     private socketService: SocketService,
     private cdr: ChangeDetectorRef,
     private conversionService: UnitConversionService,
-    public themeService: ThemeService
+    public themeService: ThemeService,
+    private route: ActivatedRoute,
+    private router: Router
   ) {
+    // Listen for route changes to sync activeTab
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      this.syncActiveTabWithRoute();
+    });
+
     this.themeService.isDarkMode$.subscribe(isDark => {
       this.isDarkMode = isDark;
       this.cdr.detectChanges();
@@ -129,6 +144,21 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
   sensorConfigs: any[] = [];
 
   async ngOnInit(): Promise<void> {
+    const userJson = localStorage.getItem('station_user');
+    if (userJson) {
+      this.currentUser = JSON.parse(userJson);
+      // Filter navItems based on permissions (always show profile)
+      this.navItems = this.navItems.filter(item => {
+        let permKey = item.id;
+        if (permKey === 'report') permKey = 'reports'; // Fix mismatch between nav ID and DB permission key
+
+        return item.id === 'profile' ||
+          (this.currentUser.permissions && this.currentUser.permissions[permKey]) ||
+          (this.currentUser.role === 'Administrator' && item.id === 'users');
+      });
+    }
+
+    this.syncActiveTabWithRoute();
     await this.checkStation();
     await this.checkInitialUnits();
     await this.fetchSensorConfigs();
@@ -145,8 +175,10 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
     // Listen for live WebSocket updates
     const socketSub = this.socketService.onWindDataUpdate().subscribe((data) => {
       this.lastDataTimestamp = Date.now();
+      this.cdr.detectChanges(); // Update status bar globally
+
       // Only reflect updates in dashboard page as requested
-      if (this.activeTab === 'home') {
+      if (this.activeTab === 'dashboard') {
         const dataDate = new Date(data.datetime);
         const today = new Date();
         const isToday = dataDate.getDate() === today.getDate() &&
@@ -156,9 +188,10 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
         if (isToday) {
           // Update basic telemetry with converted values
           this.anemometerData = {
-            uv: this.applyConversion(data.wind_uv, 'wind_ux'),
-            uy: this.applyConversion(data.wind_uy, 'wind_uy'),
-            uz: this.applyConversion(data.wind_uz, 'wind_uz'),
+            u: this.applyConversion(data.wind_uv, 'wind_ux'),
+            v: this.applyConversion(data.wind_uy, 'wind_uy'),
+            w: this.applyConversion(data.wind_uz, 'wind_uz'),
+            sos: data.sos || 0,
             rain: this.applyConversion(data.rain_fall, 'rain'),
             temp: this.applyConversion(data.temp, 'temp'),
             solar: this.applyConversion(data.solar_rad, 'solar'),
@@ -171,45 +204,58 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
             wind_direction: data.wind_direction || 0
           };
 
-          // Update persistent widgetData trends smoothly (5 MINUTE SLIDING WINDOW)
+          // Update persistent widgetData trends smoothly (10 MINUTE SLIDING WINDOW = 600 pts)
           this._widgetData.forEach(w => {
-            if (w.id === 'wind_ux') w.val = this.applyConversion(data.wind_uv, 'wind_ux');
-            else if (w.id === 'wind_uy') w.val = this.applyConversion(data.wind_uy, 'wind_uy');
-            else if (w.id === 'wind_uz') w.val = this.applyConversion(data.wind_uz, 'wind_uz');
-            else if (w.id === 'humidity') w.val = this.applyConversion(data.humidity || 65, 'humidity');
-            else if (w.id === 'pressure') w.val = this.applyConversion(data.pressure || 1013.2, 'pressure');
-            else if (w.id === 'solar') w.val = this.applyConversion(data.solar_rad, 'solar');
-            else if (w.id === 'temp') w.val = this.applyConversion(data.temp, 'temp');
-            else if (w.id === 'rain') w.val = this.applyConversion(data.rain_fall, 'rain');
-            else if (w.id === 'battery') w.val = this.applyConversion(data.battery || 92, 'battery');
-            else if (w.id === 'wind_speed') w.val = this.applyConversion(data.wind_speed || 0, 'wind_speed');
-            else if (w.id === 'wind_direction') w.val = data.wind_direction || 0;
+            if (w.id === 'u') w.val = this.anemometerData.u;
+            else if (w.id === 'v') w.val = this.anemometerData.v;
+            else if (w.id === 'w') w.val = this.anemometerData.w;
+            else if (w.id === 'sos') w.val = this.anemometerData.sos;
+            else if (w.id === 'humidity') w.val = this.anemometerData.humidity;
+            else if (w.id === 'pressure') w.val = this.anemometerData.pressure;
+            else if (w.id === 'solar') w.val = this.anemometerData.solar;
+            else if (w.id === 'temp') w.val = this.anemometerData.temp;
+            else if (w.id === 'rain') w.val = this.anemometerData.rain;
+            else if (w.id === 'battery') w.val = this.anemometerData.battery;
+            else if (w.id === 'wind_speed') w.val = this.anemometerData.wind_speed;
+            else if (w.id === 'wind_direction') w.val = this.anemometerData.wind_direction;
             else if (w.id === 'gps') {
               w.val = data.lat;
               w.lat = data.lat;
               w.lon = data.lon;
             }
 
-            // Push to trend and maintain last 5 MINUTES (300 points at 1s intervals)
+            // Push to trend and maintain last 1 MINUTE (60 points at 1s intervals)
             if (w.trend && w.id !== 'gps') {
-              w.trend.push(Number(w.val));
-              if (w.trend.length > 300) w.trend.shift();
-              w.trend = [...w.trend];
+              const currentTrend = [...(w.trend || [])];
+              currentTrend.push(Number(w.val));
+              while (currentTrend.length > 60) currentTrend.shift();
+              w.trend = currentTrend;
             }
           });
 
-          // Update FULL DAY trends for trajectory charts with timestamps
-          const timestamp = new Date().toISOString();
-          this.fullDayTrends['wind_ux'].push([timestamp, this.applyConversion(data.wind_uv, 'wind_ux')]);
-          this.fullDayTrends['wind_uy'].push([timestamp, this.applyConversion(data.wind_uy, 'wind_uy')]);
-          this.fullDayTrends['wind_uz'].push([timestamp, this.applyConversion(data.wind_uz, 'wind_uz')]);
+          // Re-assign to trigger Angular change detection for child components
+          this._widgetData = [...this._widgetData];
 
-          // Keep only last 3600 points (1 hour if 1Hz, or adjust as needed)
-          if (this.fullDayTrends['wind_ux'].length > 3600) {
-            this.fullDayTrends['wind_ux'].shift();
-            this.fullDayTrends['wind_uy'].shift();
-            this.fullDayTrends['wind_uz'].shift();
+          // Update rolling window trends for trajectory charts with timestamps
+          const timeMs = new Date(data.datetime).getTime();
+          if (!this.fullDayTrends['u']) {
+            this.fullDayTrends = { u: [], v: [], w: [], sos: [] };
           }
+          this.fullDayTrends['u'].push([timeMs, this.anemometerData.u]);
+          this.fullDayTrends['v'].push([timeMs, this.anemometerData.v]);
+          this.fullDayTrends['w'].push([timeMs, this.anemometerData.w]);
+          this.fullDayTrends['sos'].push([timeMs, this.anemometerData.sos]);
+
+          // Keep strictly to 60 points (1 minute) for consistency
+          if (this.fullDayTrends['u'].length > 60) {
+            this.fullDayTrends['u'].shift();
+            this.fullDayTrends['v'].shift();
+            this.fullDayTrends['w'].shift();
+            this.fullDayTrends['sos'].shift();
+          }
+
+          // RE-ASSIGN to trigger child ngOnChanges
+          this.fullDayTrends = { ...this.fullDayTrends };
 
           // Trigger change detection for all subscribers
           this.cdr.markForCheck();
@@ -363,8 +409,11 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
   }
 
   applyConversion(val: number, paramId: string): number {
-    const initialUnitObj = this.initialUnits.find(u => u.parameter_id === paramId);
-    const targetConfig = this.sensorConfigs.find(c => c.parameter_id === paramId);
+    const idMap: { [key: string]: string } = { 'u': 'wind_ux', 'v': 'wind_uy', 'w': 'wind_uz' };
+    const dbParamId = idMap[paramId] || paramId;
+
+    const initialUnitObj = this.initialUnits.find(u => u.parameter_id === dbParamId);
+    const targetConfig = this.sensorConfigs.find(c => c.parameter_id === dbParamId);
 
     if (!initialUnitObj || !targetConfig) return val;
 
@@ -385,19 +434,20 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
   // selectedStation: string | null = 'Pondi';
 
   anemometerData: AnemometerData = {
-    uv: 12.4,
-    uy: 8.7,
-    uz: 3.2,
-    rain: 2.5,
-    temp: 24.3,
-    solar: 856,
-    lat: 13.0827,
-    lon: 80.2707,
-    humidity: 65,
-    pressure: 1013.2,
-    battery: 92,
-    wind_speed: 12.4,
-    wind_direction: 45
+    u: 0,
+    v: 0,
+    w: 0,
+    sos: 0,
+    rain: 0,
+    temp: 0,
+    solar: 0,
+    lat: 0,
+    lon: 0,
+    humidity: 0,
+    pressure: 0,
+    battery: 0,
+    wind_speed: 0,
+    wind_direction: 0
   };
 
   // ...existing code...
@@ -415,7 +465,7 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
 
   // ...existing code...
   navItems: NavItem[] = [
-    { id: 'home', icon: 'fa-house', label: 'Dashboard' },
+    { id: 'dashboard', icon: 'fa-house', label: 'Dashboard' },
     { id: 'report', icon: 'fa-file-lines', label: 'Reports' },
     { id: 'analysis', icon: 'fa-chart-line', label: 'Analysis' },
     { id: 'users', icon: 'fa-users-gear', label: 'User Management' },
@@ -425,9 +475,10 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
 
   // Report Column Visibility
   reportColumns = [
-    { label: 'Wind UX', key: 'uv', visible: true },
-    { label: 'Wind UY', key: 'uy', visible: true },
-    { label: 'Wind UZ', key: 'uz', visible: true },
+    { label: 'Wind U', key: 'uv', visible: true },
+    { label: 'Wind V', key: 'uy', visible: true },
+    { label: 'Wind W', key: 'uz', visible: true },
+    { label: 'SOS', key: 'sos', visible: true },
     { label: 'Rainfall', key: 'rain', visible: true },
     { label: 'Temp', key: 'temp', visible: true },
     { label: 'Solar Rad', key: 'solar', visible: true },
@@ -457,13 +508,7 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
 
   // Settings Thresholds
   // Profile Data
-  currentUser = {
-    name: 'Admin User',
-    role: 'Navigation Officer',
-    email: 'admin@marinehq.com',
-    vessel: 'MV AURORA',
-    lastLogin: '24 DEC 2025 14:35 UTC'
-  };
+  currentUser: any = {};
 
   reportData: any[] = [];
   currentDateTime = new Date();
@@ -478,22 +523,18 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
   // }
 
   async loadLatestWindData() {
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-
-    const startStr = this.apiService.formatDateForQuery(startOfDay);
-    const nowStr = this.apiService.formatDateForQuery(now);
-
-    const historicalData = await this.apiService.getFilteredWindData(startStr, nowStr);
+    // Fetch from high-performance RAM cache on backend
+    const historicalData = await this.apiService.getLatestHourData();
 
     if (historicalData.length > 0) {
       // Data is ordered DESC, so index 0 is the latest
       const latestData = historicalData[0];
 
       this.anemometerData = {
-        uv: this.applyConversion(latestData.wind_uv, 'wind_ux'),
-        uy: this.applyConversion(latestData.wind_uy, 'wind_uy'),
-        uz: this.applyConversion(latestData.wind_uz, 'wind_uz'),
+        u: this.applyConversion(latestData.wind_uv, 'wind_ux'),
+        v: this.applyConversion(latestData.wind_uy, 'wind_uy'),
+        w: this.applyConversion(latestData.wind_uz, 'wind_uz'),
+        sos: latestData.sos || 0,
         rain: this.applyConversion(latestData.rain_fall, 'rain'),
         temp: this.applyConversion(latestData.temp, 'temp'),
         solar: this.applyConversion(latestData.solar_rad, 'solar'),
@@ -508,26 +549,28 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
 
       // Populate widgets with actual historical trends from today
       this._widgetData.forEach(w => {
-        if (w.id === 'wind_ux') w.val = this.applyConversion(latestData.wind_uv, 'wind_ux');
-        else if (w.id === 'wind_uy') w.val = this.applyConversion(latestData.wind_uy, 'wind_uy');
-        else if (w.id === 'wind_uz') w.val = this.applyConversion(latestData.wind_uz, 'wind_uz');
-        else if (w.id === 'humidity') w.val = this.applyConversion(latestData.humidity || 65, 'humidity');
-        else if (w.id === 'pressure') w.val = this.applyConversion(latestData.pressure || 1013.2, 'pressure');
-        else if (w.id === 'solar') w.val = this.applyConversion(latestData.solar_rad, 'solar');
-        else if (w.id === 'temp') w.val = this.applyConversion(latestData.temp, 'temp');
-        else if (w.id === 'rain') w.val = this.applyConversion(latestData.rain_fall, 'rain');
-        else if (w.id === 'battery') w.val = this.applyConversion(latestData.battery || 92, 'battery');
-        else if (w.id === 'wind_speed') w.val = this.applyConversion(latestData.wind_speed || 0, 'wind_speed');
-        else if (w.id === 'wind_direction') w.val = latestData.wind_direction || 0;
+        if (w.id === 'u') w.val = this.anemometerData.u;
+        else if (w.id === 'v') w.val = this.anemometerData.v;
+        else if (w.id === 'w') w.val = this.anemometerData.w;
+        else if (w.id === 'sos') w.val = this.anemometerData.sos;
+        else if (w.id === 'humidity') w.val = this.anemometerData.humidity;
+        else if (w.id === 'pressure') w.val = this.anemometerData.pressure;
+        else if (w.id === 'solar') w.val = this.anemometerData.solar;
+        else if (w.id === 'temp') w.val = this.anemometerData.temp;
+        else if (w.id === 'rain') w.val = this.anemometerData.rain;
+        else if (w.id === 'battery') w.val = this.anemometerData.battery;
+        else if (w.id === 'wind_speed') w.val = this.anemometerData.wind_speed;
+        else if (w.id === 'wind_direction') w.val = this.anemometerData.wind_direction;
         else if (w.id === 'gps') { w.val = latestData.lat; w.lat = latestData.lat; w.lon = latestData.lon; }
 
         if (w.trend && w.id !== 'gps') {
-          // Small Cards: Last 5 minutes (300 points)
-          const fiveMinHistory = historicalData.slice(0, 300).reverse();
-          w.trend = fiveMinHistory.map(item => {
-            if (w.id === 'wind_ux') return this.applyConversion(item.wind_uv, 'wind_ux');
-            if (w.id === 'wind_uy') return this.applyConversion(item.wind_uy, 'wind_uy');
-            if (w.id === 'wind_uz') return this.applyConversion(item.wind_uz, 'wind_uz');
+          // Small Cards: Last 1 minute (60 points) as requested
+          const oneMinHistory = historicalData.slice(0, 60).reverse();
+          w.trend = oneMinHistory.map(item => {
+            if (w.id === 'u') return this.applyConversion(item.wind_uv, 'wind_ux');
+            if (w.id === 'v') return this.applyConversion(item.wind_uy, 'wind_uy');
+            if (w.id === 'w') return this.applyConversion(item.wind_uz, 'wind_uz');
+            if (w.id === 'sos') return item.sos || 0;
             if (w.id === 'humidity') return this.applyConversion(item.humidity || 65, 'humidity');
             if (w.id === 'pressure') return this.applyConversion(item.pressure || 1013.2, 'pressure');
             if (w.id === 'solar') return this.applyConversion(item.solar_rad, 'solar');
@@ -546,12 +589,13 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
         }
       });
 
-      // Full Day Trends for Trajectory (All records from today, sorted chronologically)
-      const dayHistory = [...historicalData].reverse();
+      // Trajectory Charts: Keep strictly to last 60 points (1 minute) to match cards
+      const oneMinHistory = historicalData.slice(0, 60).reverse();
       this.fullDayTrends = {
-        wind_ux: dayHistory.map(d => this.applyConversion(d.wind_uv, 'wind_ux')),
-        wind_uy: dayHistory.map(d => this.applyConversion(d.wind_uy, 'wind_uy')),
-        wind_uz: dayHistory.map(d => this.applyConversion(d.wind_uz, 'wind_uz'))
+        u: oneMinHistory.map(d => [new Date(d.datetime).getTime(), this.applyConversion(d.wind_uv, 'wind_ux')]),
+        v: oneMinHistory.map(d => [new Date(d.datetime).getTime(), this.applyConversion(d.wind_uy, 'wind_uy')]),
+        w: oneMinHistory.map(d => [new Date(d.datetime).getTime(), this.applyConversion(d.wind_uz, 'wind_uz')]),
+        sos: oneMinHistory.map(d => [new Date(d.datetime).getTime(), d.sos || 0])
       };
 
       this.cdr.markForCheck();
@@ -560,15 +604,15 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
 
   getWeatherInfo() {
     const data = this.anemometerData;
-    const uv = data.uv || 0;
-    const uy = data.uy || 0;
-    const uz = data.uz || 0;
+    const u = data.u || 0;
+    const v = data.v || 0;
+    const w = data.w || 0;
     const rain = data.rain || 0;
     const solar = data.solar || 0;
     const humidity = data.humidity || 0;
     const temp = data.temp || 0;
 
-    const windSpeed = Math.sqrt(Math.pow(uv, 2) + Math.pow(uy, 2) + Math.pow(uz, 2));
+    const windSpeed = Math.sqrt(Math.pow(u, 2) + Math.pow(v, 2) + Math.pow(w, 2));
 
     let condition = "Fair";
     let icon = "fa-sun";
@@ -627,9 +671,10 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
 
   updateAnemometerData() {
     this.anemometerData = {
-      uv: parseFloat((this.anemometerData.uv + (Math.random() - 0.5) * 2).toFixed(1)),
-      uy: parseFloat((this.anemometerData.uy + (Math.random() - 0.5) * 2).toFixed(1)),
-      uz: parseFloat((this.anemometerData.uz + (Math.random() - 0.5) * 0.5).toFixed(1)),
+      u: parseFloat((this.anemometerData.u + (Math.random() - 0.5) * 2).toFixed(1)),
+      v: parseFloat((this.anemometerData.v + (Math.random() - 0.5) * 2).toFixed(1)),
+      w: parseFloat((this.anemometerData.w + (Math.random() - 0.5) * 0.5).toFixed(1)),
+      sos: parseFloat((this.anemometerData.sos + (Math.random() - 0.5) * 1).toFixed(1)),
       rain: parseFloat(Math.max(0, this.anemometerData.rain + (Math.random() - 0.5) * 0.5).toFixed(1)),
       temp: parseFloat((this.anemometerData.temp + (Math.random() - 0.5) * 0.3).toFixed(1)),
       solar: Math.floor(this.anemometerData.solar + (Math.random() - 0.5) * 50),
@@ -644,7 +689,8 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
 
   async generateReportData() {
     try {
-      const allWindData = await this.apiService.fetchWindData();
+      // Use high-performance RAM cache for initial load
+      const allWindData = await this.apiService.getLatestHourData();
       
       // Transform API data into report format with unit conversion
       this.reportData = allWindData.map(item => ({
@@ -653,11 +699,13 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
           day: 'numeric',
           year: 'numeric',
           hour: '2-digit',
-          minute: '2-digit'
+          minute: '2-digit',
+          second: '2-digit'
         }),
-        uv: Number(this.applyConversion(item.wind_uv || 0, 'wind_ux')).toFixed(2),
-        uy: Number(this.applyConversion(item.wind_uy || 0, 'wind_uy')).toFixed(2),
-        uz: Number(this.applyConversion(item.wind_uz || 0, 'wind_uz')).toFixed(2),
+        u: Number(this.applyConversion(item.wind_uv || 0, 'wind_ux')).toFixed(2),
+        v: Number(this.applyConversion(item.wind_uy || 0, 'wind_uy')).toFixed(2),
+        w: Number(this.applyConversion(item.wind_uz || 0, 'wind_uz')).toFixed(2),
+        sos: Number(item.sos || 0).toFixed(2),
         rain: Number(this.applyConversion(item.rain_fall || 0, 'rain')).toFixed(2),
         temp: Number(this.applyConversion(item.temp || 0, 'temp')).toFixed(2),
         solar: Number(this.applyConversion(item.solar_rad || 0, 'solar')).toFixed(2),
@@ -702,10 +750,15 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
 
 
 
-  activeTab: string = 'home';
+  syncActiveTabWithRoute() {
+    const path = this.router.url.split('/').pop() || 'dashboard';
+    this.activeTab = path === 'base' ? 'dashboard' : path;
+    this.cdr.markForCheck();
+  }
 
   setActiveTab(id: string) {
     this.activeTab = id;
+    this.router.navigate(['/base', id]);
     this.cdr.markForCheck();
   }
 
@@ -745,18 +798,19 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
     };
 
     this._widgetData = [
-      { id: 'wind_ux', icon: 'fa-wind', label: 'Wind UX', val: this.anemometerData.uv, unit: getUnit('wind_ux'), threshold: getThreshold('wind_ux'), pct: 75, barColor: 'from-cyan-400 to-blue-500', trend: Array(20).fill(this.anemometerData.uv) },
-      { id: 'wind_uy', icon: 'fa-wind', label: 'Wind UY', val: this.anemometerData.uy, unit: getUnit('wind_uy'), threshold: getThreshold('wind_uy'), pct: 60, barColor: 'from-cyan-400 to-blue-500', trend: Array(20).fill(this.anemometerData.uy) },
-      { id: 'wind_uz', icon: 'fa-wind', label: 'Wind UZ', val: this.anemometerData.uz, unit: getUnit('wind_uz'), threshold: getThreshold('wind_uz'), pct: 85, barColor: 'from-cyan-400 to-blue-500', trend: Array(20).fill(this.anemometerData.uz) },
-      { id: 'humidity', icon: 'fa-droplet', label: 'Humidity', val: this.anemometerData.humidity, unit: getUnit('humidity'), threshold: getThreshold('humidity'), pct: 65, barColor: 'from-blue-400 to-cyan-400', trend: Array(20).fill(this.anemometerData.humidity) },
-      { id: 'pressure', icon: 'fa-gauge-high', label: 'Pressure', val: this.anemometerData.pressure, unit: getUnit('pressure'), threshold: getThreshold('pressure'), pct: 80, barColor: 'from-indigo-400 to-blue-500', trend: Array(20).fill(this.anemometerData.pressure) },
-      { id: 'solar', icon: 'fa-sun', label: 'Solar Rad', val: this.anemometerData.solar, unit: getUnit('solar'), threshold: getThreshold('solar'), pct: 90, barColor: 'from-yellow-400 to-orange-500', trend: Array(20).fill(this.anemometerData.solar) },
-      { id: 'temp', icon: 'fa-temperature-half', label: 'Temp', val: this.anemometerData.temp, unit: getUnit('temp'), threshold: getThreshold('temp'), pct: 65, barColor: 'from-orange-400 to-red-500', trend: Array(20).fill(this.anemometerData.temp) },
-      { id: 'rain', icon: 'fa-cloud-rain', label: 'Rainfall', val: this.anemometerData.rain, unit: getUnit('rain'), threshold: getThreshold('rain'), pct: 0, barColor: 'from-blue-400 to-cyan-400', trend: Array(20).fill(this.anemometerData.rain) },
+      { id: 'u', icon: 'fa-wind', label: 'Wind U', val: this.anemometerData.u, unit: getUnit('wind_ux'), threshold: getThreshold('wind_ux'), pct: 75, barColor: 'from-cyan-400 to-blue-500', trend: [] },
+      { id: 'v', icon: 'fa-wind', label: 'Wind V', val: this.anemometerData.v, unit: getUnit('wind_uy'), threshold: getThreshold('wind_uy'), pct: 60, barColor: 'from-cyan-400 to-blue-500', trend: [] },
+      { id: 'w', icon: 'fa-wind', label: 'Wind W', val: this.anemometerData.w, unit: getUnit('wind_uz'), threshold: getThreshold('wind_uz'), pct: 85, barColor: 'from-cyan-400 to-blue-500', trend: [] },
+      { id: 'sos', icon: 'fa-bolt', label: 'SOS', val: this.anemometerData.sos, unit: 'm/s', threshold: { has: false, val: 0 }, pct: 100, barColor: 'from-blue-400 to-indigo-500', trend: [] },
+      { id: 'humidity', icon: 'fa-droplet', label: 'Humidity', val: this.anemometerData.humidity, unit: getUnit('humidity'), threshold: getThreshold('humidity'), pct: 65, barColor: 'from-blue-400 to-cyan-400', trend: [] },
+      { id: 'pressure', icon: 'fa-gauge-high', label: 'Pressure', val: this.anemometerData.pressure, unit: getUnit('pressure'), threshold: getThreshold('pressure'), pct: 80, barColor: 'from-indigo-400 to-blue-500', trend: [] },
+      { id: 'solar', icon: 'fa-sun', label: 'Solar Rad', val: this.anemometerData.solar, unit: getUnit('solar'), threshold: getThreshold('solar'), pct: 90, barColor: 'from-yellow-400 to-orange-500', trend: [] },
+      { id: 'temp', icon: 'fa-temperature-half', label: 'Temp', val: this.anemometerData.temp, unit: getUnit('temp'), threshold: getThreshold('temp'), pct: 65, barColor: 'from-orange-400 to-red-500', trend: [] },
+      { id: 'rain', icon: 'fa-cloud-rain', label: 'Rainfall', val: this.anemometerData.rain, unit: getUnit('rain'), threshold: getThreshold('rain'), pct: 0, barColor: 'from-blue-400 to-cyan-400', trend: [] },
       { id: 'gps', icon: 'fa-location-dot', label: 'GPS Position', val: this.anemometerData.lat, lat: this.anemometerData.lat, lon: this.anemometerData.lon, threshold: { has: false, val: 0 }, unit: '', pct: 100, barColor: 'from-green-400 to-cyan-400', trend: [] },
-      { id: 'battery', icon: 'fa-battery-full', label: 'Battery', val: this.anemometerData.battery, unit: getUnit('battery'), threshold: getThreshold('battery'), pct: 92, barColor: 'from-emerald-400 to-green-500', trend: Array(20).fill(this.anemometerData.battery) },
-      { id: 'wind_speed', icon: 'fa-gauge-high', label: 'Wind Speed', val: this.anemometerData.wind_speed, unit: getUnit('wind_speed'), threshold: getThreshold('wind_speed'), pct: 70, barColor: 'from-blue-400 to-cyan-400', trend: Array(20).fill(this.anemometerData.wind_speed) },
-      { id: 'wind_direction', icon: 'fa-compass', label: 'Wind Direction', val: this.anemometerData.wind_direction, unit: getUnit('wind_direction'), threshold: { has: false, val: 0 }, pct: 100, barColor: 'from-indigo-400 to-blue-500', trend: Array(20).fill(this.anemometerData.wind_direction) },
+      { id: 'battery', icon: 'fa-battery-full', label: 'Battery', val: this.anemometerData.battery, unit: getUnit('battery'), threshold: getThreshold('battery'), pct: 92, barColor: 'from-emerald-400 to-green-500', trend: [] },
+      { id: 'wind_speed', icon: 'fa-gauge-high', label: 'Wind Speed', val: this.anemometerData.wind_speed, unit: getUnit('wind_speed'), threshold: getThreshold('wind_speed'), pct: 70, barColor: 'from-blue-400 to-cyan-400', trend: [] },
+      { id: 'wind_direction', icon: 'fa-compass', label: 'Wind Direction', val: this.anemometerData.wind_direction, unit: getUnit('wind_direction'), threshold: { has: false, val: 0 }, pct: 100, barColor: 'from-indigo-400 to-blue-500', trend: [] },
     ];
   }
 }
