@@ -60,7 +60,8 @@ export class Users implements OnInit {
       reports: false,
       analysis: false,
       users: false,
-      settings: false
+      settings: false,
+      'ship-schedule': false
     }
   };
 
@@ -164,12 +165,23 @@ export class Users implements OnInit {
   openRoleModal(role?: Role) {
     if (role) {
       this.isEditing = true;
-      this.currentRole = { ...role, permissions: { ...role.permissions } };
+      this.currentRole = {
+        ...role,
+        permissions: {
+          dashboard: true,
+          reports: false,
+          analysis: false,
+          users: false,
+          settings: false,
+          'ship-schedule': false,
+          ...role.permissions
+        }
+      };
     } else {
       this.isEditing = false;
       this.currentRole = {
         name: '',
-        permissions: { dashboard: true, reports: false, analysis: false, users: false, settings: false }
+        permissions: { dashboard: true, reports: false, analysis: false, users: false, settings: false, 'ship-schedule': false }
       };
     }
     this.showRoleModal = true;

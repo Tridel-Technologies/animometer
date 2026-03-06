@@ -4,6 +4,8 @@ import { MapComponent } from "../../map/map";
 import { NgxEchartsDirective, provideEchartsCore } from 'ngx-echarts';
 import * as echarts from 'echarts';
 import 'echarts-gl';
+import { ShipScheduleService } from '../ship-schedule/ship-schedule.service';
+import { ApiService } from '../../apiService/api-service';
 
 interface WidgetData {
   id: string;
@@ -47,7 +49,12 @@ export class Dashboard implements OnInit, OnDestroy, OnChanges {
   threeDOptions: any;
   threeDUpdate: any;
 
-  constructor(private cdr: ChangeDetectorRef) { }
+  routeCoordinates: [number, number][] = [];
+  actualPath: [number, number][] = [];
+  currentScheduleName: string = '';
+  activeCruise: any = null;
+
+  constructor(private cdr: ChangeDetectorRef, private scheduleService: ShipScheduleService, private apiService: ApiService) { }
 
   get currentImagePath() {
     return `assets/${this.currentSlide}.${this.extensions[this.currentExtIndex]}`;
@@ -263,6 +270,19 @@ export class Dashboard implements OnInit, OnDestroy, OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['anemometerData'] && changes['anemometerData'].currentValue) {
       this.lastDataTimestamp = Date.now();
+      if (!this.currentScheduleName) {
+        this.setActualPathToLive();
+      } else {
+        if (this.actualPath.length > 0) {
+          const last = this.actualPath[this.actualPath.length - 1];
+          // Only update if changed visually
+          if (last[0] !== this.anemometerData.lon || last[1] !== this.anemometerData.lat) {
+            this.actualPath = [...this.actualPath, [this.anemometerData.lon, this.anemometerData.lat]];
+          }
+        } else {
+          this.setActualPathToLive();
+        }
+      }
     }
     if (changes['fullDayTrends'] || changes['isDarkMode']) {
       if (!this.threeDOptions || changes['isDarkMode']) {
@@ -277,6 +297,56 @@ export class Dashboard implements OnInit, OnDestroy, OnChanges {
     this.threeDOptions = this.get3DChartBaseOptions(this.isDarkMode);
     this.update3DChart();
 
+    // Fetch current schedule and determine active cruise
+    this.scheduleService.getCruises().subscribe({
+      next: (cruises) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const activeCruise = cruises.find(c => {
+          let sDate = new Date(c.startDate);
+          let eDate = new Date(c.endDate);
+          sDate.setHours(0, 0, 0, 0);
+          eDate.setHours(23, 59, 59, 999);
+          return today >= sDate && today <= eDate;
+        });
+
+        this.activeCruise = activeCruise;
+
+        if (activeCruise && activeCruise.stations) {
+          this.currentScheduleName = activeCruise.project || activeCruise.vessel || activeCruise.id;
+          const validStations = activeCruise.stations.filter((s: any) => s.latitude && s.longitude);
+          this.routeCoordinates = validStations.map((s: any) => [s.longitude, s.latitude] as [number, number]);
+
+          // Fetch historical ship positions from the start of the schedule until now
+          const sDateStr = this.apiService.formatDateForQuery(new Date(activeCruise.startDate));
+          const eDateStr = this.apiService.formatDateForQuery(new Date());
+
+          this.apiService.getFilteredWindData(sDateStr, eDateStr).then(historical => {
+            if (historical && historical.length > 0) {
+              // Sample it or just push valid points
+              this.actualPath = historical
+                .filter(h => h.lat && h.lon)
+                .map(h => [h.lon, h.lat] as [number, number])
+                .reverse(); // Reverse DESC order to ASC for chronological path
+            } else {
+              this.setActualPathToLive();
+            }
+            this.cdr.markForCheck();
+          });
+        } else {
+          this.currentScheduleName = '';
+          this.routeCoordinates = [];
+          this.setActualPathToLive();
+        }
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error('Failed to load cruises', err);
+        this.setActualPathToLive();
+      }
+    });
+
     this.slideInterval = setInterval(() => {
       this.currentSlide = this.currentSlide === 3 ? 1 : this.currentSlide + 1;
       this.currentExtIndex = 0;
@@ -290,5 +360,13 @@ export class Dashboard implements OnInit, OnDestroy, OnChanges {
   ngOnDestroy(): void {
     if (this.slideInterval) clearInterval(this.slideInterval);
     if (this.watchdogInterval) clearInterval(this.watchdogInterval);
+  }
+
+  setActualPathToLive() {
+    if (this.anemometerData && this.anemometerData.lat && this.anemometerData.lon) {
+      this.actualPath = [[this.anemometerData.lon, this.anemometerData.lat]];
+    } else {
+      this.actualPath = [];
+    }
   }
 }

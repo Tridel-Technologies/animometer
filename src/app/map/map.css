@@ -1,7 +1,35 @@
 #map-container {
-  /* position: absolute; */
   top: 0;
   bottom: 0;
   height: 100%;
   width: 100%;
+}
+.ship-icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.4));
+  transition: opacity 0.3s ease;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.ship-icon-container svg {
+  overflow: visible;
+}
+
+/* Marker customization */
+.mapboxgl-marker {
+  overflow: visible !important;
+}
+
+.modern-map-popup .mapboxgl-popup-content {
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+.custom-marker {
+  background-repeat: no-repeat;
+  background-position: center;
 }

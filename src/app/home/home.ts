@@ -40,6 +40,7 @@ interface AnemometerData {
   battery?: number;
   wind_speed?: number;
   wind_direction?: number;
+  datetime?: string;
 }
 
 interface NavItem {
@@ -156,7 +157,7 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
 
         return item.id === 'profile' ||
           (this.currentUser.permissions && this.currentUser.permissions[permKey]) ||
-          (this.currentUser.role === 'Administrator' && item.id === 'users');
+          (this.currentUser.role === 'Administrator' && (item.id === 'users' || item.id === 'ship-schedule'));
       });
     }
 
@@ -203,7 +204,8 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
             pressure: this.applyConversion(data.pressure || 1013.2, 'pressure'),
             battery: this.applyConversion(data.battery || 92, 'battery'),
             wind_speed: this.applyConversion(data.wind_speed || 0, 'wind_speed'),
-            wind_direction: data.wind_direction || 0
+            wind_direction: data.wind_direction || 0,
+            datetime: data.datetime
           };
 
           // Update persistent widgetData trends smoothly (10 MINUTE SLIDING WINDOW = 600 pts)
@@ -547,7 +549,8 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
         pressure: this.applyConversion(latestData.pressure || 1013.2, 'pressure'),
         battery: this.applyConversion(latestData.battery || 92, 'battery'),
         wind_speed: this.applyConversion(latestData.wind_speed || 0, 'wind_speed'),
-        wind_direction: latestData.wind_direction || 0
+        wind_direction: latestData.wind_direction || 0,
+        datetime: latestData.datetime
       };
 
       // Populate widgets with actual historical trends from today
