@@ -152,8 +152,12 @@
             <app-settings *ngIf="activeTab === 'settings'" [initialUnits]="initialUnits"
                 (onEditInitialUnits)="triggerInitialUnitsEdit()" (onConfigSaved)="fetchSensorConfigs()"></app-settings>
 
+            <!-- ship-schedule Page -->
+            <app-ship-schedule *ngIf="activeTab === 'ship-schedule'"></app-ship-schedule>
+
             <!-- Profile Page -->
             <app-profile *ngIf="activeTab === 'profile'" [currentUser]="currentUser"></app-profile>
+
 
         </div>
 <div class="flex-1 flex items-center justify-center" *ngIf="!isInitialized">

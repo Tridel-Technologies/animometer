@@ -44,6 +44,10 @@ io.on('connection', (socket) => {
   });
 });
 
+// Ship Schedule routes
+const shipScheduleRoute = require('./router/shipScheduleRoute');
+app.use('/api/ship-schedules', shipScheduleRoute);
+
 // PostgreSQL Listen for live updates
 const setupPGListener = async () => {
   try {

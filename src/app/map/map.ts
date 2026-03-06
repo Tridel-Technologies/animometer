@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import { Component, ElementRef, Input, OnDestroy, OnInit, OnChanges, SimpleChanges, ViewChild, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { PLATFORM_ID } from '@angular/core';
 import mapboxgl, { Marker } from 'mapbox-gl';
@@ -10,14 +10,16 @@ import { Homeservice } from '../home/homeService/homeservice';
   templateUrl: './map.html',
   styleUrls: ['./map.css']
 })
-export class MapComponent implements OnInit, OnDestroy {
+export class MapComponent implements OnInit, OnDestroy, OnChanges {
   @Input() selectedStation!: string;
+  @Input() routeCoordinates!: [number, number][]; // New Input for dynamic routing
 
   constructor( private station:Homeservice){}
 
   @ViewChild('mapContainer', { static: true }) mapContainer!: ElementRef;
   map: any;
   private platformId = inject(PLATFORM_ID);
+  private currentMarkers: mapboxgl.Marker[] = [];
 
   // pondi 11.936086, 79.836348
   // isro 13.743292, 80.242799
@@ -73,8 +75,14 @@ trackline2: [number, number][] = [
   this.map.on('load', () => {
     // this.addMarker([79.836348, 11.936086], 'Pondi', 'assets/cam.png');
     // this.addMarker([80.242799, 13.743292], 'ISRO', 'assets/cam.png');
-    this.addMarker(this.trackline2[4], 'Ship 1', 'assets/ship.png');
-    this.addTrackPath(this.trackline2);
+    
+    // Draw dynamic route if provided, otherwise fallback to default
+    if (this.routeCoordinates && this.routeCoordinates.length > 0) {
+      this.drawDynamicRoute();
+    } else {
+      this.addMarker(this.trackline2[4], 'Ship 1', 'assets/ship.png');
+      this.addTrackPath(this.trackline2);
+    }
   });
 
   // ✅ click AFTER map init
@@ -83,6 +91,45 @@ trackline2: [number, number][] = [
   });
 }
 
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['routeCoordinates'] && this.map && this.map.isStyleLoaded()) {
+      this.drawDynamicRoute();
+    }
+  }
+
+  drawDynamicRoute() {
+    if (!this.map) return;
+    
+    // Clear old markers
+    this.currentMarkers.forEach(marker => marker.remove());
+    this.currentMarkers = [];
+
+    if (!this.routeCoordinates || this.routeCoordinates.length === 0) {
+       // Also clear the line path if empty
+       if (this.map.getLayer('track-line')) this.map.removeLayer('track-line');
+       if (this.map.getSource('track-source')) this.map.removeSource('track-source');
+       return;
+    }
+
+    // Add markers for stations
+    this.routeCoordinates.forEach((coord, index) => {
+       const isStart = index === 0;
+       const icon = isStart ? 'assets/ship.png' : 'assets/loc.png'; 
+       const marker = this.addMarker(coord, `Station ${index + 1}`, icon);
+       if (marker) this.currentMarkers.push(marker);
+    });
+
+    // Draw lines
+    if(this.routeCoordinates.length > 1) {
+      this.addTrackPath(this.routeCoordinates);
+      // Auto focus maps to show all points
+      this.focusMarker(this.routeCoordinates[0]);
+    } else {
+      if (this.map.getLayer('track-line')) this.map.removeLayer('track-line');
+      if (this.map.getSource('track-source')) this.map.removeSource('track-source');
+      this.focusMarker(this.routeCoordinates[0]);
+    }
+  }
 
   addTrackPath(coordinates: [number, number][]) {
   if (!this.map) return;
@@ -129,7 +176,7 @@ addMarker(coordinates: [number, number], stationName:string, icon:string) {
     this.focusMarker(coordinates);
    this.station.setSelectedStation(stationName); 
   });
-  new  mapboxgl.Marker({ element: markerEl, anchor: 'bottom' })
+  return new mapboxgl.Marker({ element: markerEl, anchor: 'bottom' })
     .setLngLat(coordinates) 
     .addTo(this.map); 
 }
@@ -140,9 +187,9 @@ focusMarker(coordinates: [number, number]) {
     zoom: 12,          // adjust zoom level if needed
     speed: 1.2,        // animation speed
     curve: 1.4,   
-    pitch:200, 
-    bearing:20,    // smoothness
-    offset: [0, 200],  // ⬇️ pushes map down
+    pitch: 45, 
+    bearing: 0,    // smoothness
+    offset: [0, 0],  // default offset
     essential: true
   });
 }

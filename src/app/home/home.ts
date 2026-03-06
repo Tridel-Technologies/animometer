@@ -17,6 +17,8 @@ import { Report } from './report/report';
 import { Analysis } from './analysis/analysis';
 import { Settings } from './settings/settings';
 import { Profile } from './profile/profile';
+import { ShipSchedule } from './ship-schedule/ship-schedule';
+
 import { Users } from './users/users';
 import { ApiService, WindData } from '../apiService/api-service';
 import { SocketService } from '../apiService/socket-service';
@@ -49,7 +51,7 @@ interface NavItem {
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, HttpClientModule, FormsModule, TabsModule, SelectModule, Dashboard, Report, Analysis, Settings, Profile, Users, DialogModule, ButtonModule],
+  imports: [CommonModule, HttpClientModule, FormsModule, TabsModule, SelectModule, Dashboard, Report, Analysis, Settings, Profile, Users, DialogModule, ButtonModule, ShipSchedule],
   templateUrl: './home.html',
 })
 export class Home implements OnInit, OnDestroy, AfterViewInit {
@@ -470,7 +472,8 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
     { id: 'analysis', icon: 'fa-chart-line', label: 'Analysis' },
     { id: 'users', icon: 'fa-users-gear', label: 'User Management' },
     { id: 'settings', icon: 'fa-gear', label: 'Settings' },
-    { id: 'profile', icon: 'fa-user', label: 'Profile' }
+    { id: 'ship-schedule', icon: 'fa-ship', label: 'Ship Schedule' },
+    { id: 'profile', icon: 'fa-user', label: 'Profile' },
   ];
 
   // Report Column Visibility
@@ -691,7 +694,7 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
     try {
       // Use high-performance RAM cache for initial load
       const allWindData = await this.apiService.getLatestHourData();
-      
+
       // Transform API data into report format with unit conversion
       this.reportData = allWindData.map(item => ({
         date: new Date(item.datetime).toLocaleDateString('en-US', {
