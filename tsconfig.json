@@ -14,13 +14,32 @@
     "importHelpers": true,
     "target": "ES2022",
     "module": "preserve",
+    "moduleResolution": "bundler",
     "baseUrl": ".",
     "paths": {
-      "zrender/lib/animation/Animator": [
-        "node_modules/zrender/lib/animation/Animator.js"
+      "echarts/lib/data/OrdinalMeta": [
+        "node_modules/echarts/lib/data/OrdinalMeta.js"
       ],
-      "zrender/lib/core/LRU": [
-        "node_modules/zrender/lib/core/LRU.js"
+      "echarts/lib/coord/geo/fix/textCoord": [
+        "node_modules/echarts/lib/coord/geo/fix/textCoord.js"
+      ],
+      "echarts/lib/coord/geo/fix/geoCoord": [
+        "node_modules/echarts/lib/coord/geo/fix/geoCoord.js"
+      ],
+      "echarts/lib/util/layout": [
+        "node_modules/echarts/lib/util/layout.js"
+      ],
+      "echarts/lib/coord/cartesian/Cartesian": [
+        "node_modules/echarts/lib/coord/cartesian/Cartesian.js"
+      ],
+      "zrender/lib/animation/requestAnimationFrame": [
+        "node_modules/zrender/lib/animation/requestAnimationFrame.js"
+      ],
+      "zrender/lib/*": [
+        "node_modules/zrender/lib/*.js"
+      ],
+      "echarts/lib/*": [
+        "node_modules/echarts/lib/*.js"
       ]
     }
   },

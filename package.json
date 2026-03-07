@@ -34,7 +34,7 @@
     "@tensorflow-models/coco-ssd": "^2.2.3",
     "@tensorflow/tfjs": "^4.22.0",
     "angular-plotly.js": "^6.0.0",
-    "echarts": "^6.0.0",
+    "echarts": "^5.4.1",
     "echarts-gl": "^2.0.9",
     "jspdf": "^4.2.0",
     "jspdf-autotable": "^5.0.7",
