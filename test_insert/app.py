@@ -25,6 +25,7 @@ state = {
     "battery": 98.2,
     "lat": 11.9416, # Center of Pondicherry coast
     "lon": 79.8083,
+    "altitude": 15.0
 }
 
 def get_solar_rad(dt):
@@ -50,6 +51,7 @@ def update_state():
     # Slight drift in position (vessel movement)
     state["lat"] += random.uniform(-0.00001, 0.00001)
     state["lon"] += random.uniform(-0.00001, 0.00001)
+    state["altitude"] = max(0, min(2000.0, state["altitude"] + random.uniform(-0.1, 0.1)))
 
 def start_live_insertion():
     try:
@@ -76,8 +78,8 @@ def start_live_insertion():
             cur.execute(
                 """
                 INSERT INTO tb_wind 
-                (dateTime, wind_uv, wind_uy, wind_uz, rain_fall, temp, solar_rad, lat, lon, humidity, pressure, battery, station_name) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                (dateTime, wind_uv, wind_uy, wind_uz, rain_fall, temp, solar_rad, lat, lon, altitude, humidity, pressure, battery, station_name) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     current_time,
@@ -89,6 +91,7 @@ def start_live_insertion():
                     solar,
                     state["lat"],
                     state["lon"],
+                    state["altitude"],
                     state["humidity"],
                     state["pressure"],
                     state["battery"],

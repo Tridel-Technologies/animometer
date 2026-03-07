@@ -20,6 +20,7 @@ export interface WindData {
   wind_speed?: number;
   wind_direction?: number;
   sos?: number;
+  altitude?: number;
 }
 
 @Injectable({
@@ -79,9 +80,9 @@ export class ApiService {
 
   async getLatestWindData(): Promise<WindData | null> {
     try {
-      const allData = await this.fetchWindData();
-      if (allData.length > 0) {
-        return allData[allData.length - 1]; // Return last entry
+      const response = await lastValueFrom(this.http.get<WindData[]>(this.getApiUrl('wind-data?limit=1')));
+      if (response && response.length > 0) {
+        return response[0];
       }
       return null;
     } catch (error) {

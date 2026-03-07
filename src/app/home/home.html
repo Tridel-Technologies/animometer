@@ -10,12 +10,12 @@
                 class="font-bold text-lg text-blue-600 dark:text-blue-400 uppercase tracking-wider">
         <div class="flex items-center gap-3">
             <div
-                class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-cyan-500/30">
-                <i class="fa-solid fa-water text-white text-xl"></i>
+                class="w-10 h-10 rounded-xl flex items-center justify-center p-1">
+            <img src="../../assets/tridel.png" alt="Tridel Logo" class="max-w-full max-h-full object-contain">
             </div>
             <h2
-                class="text-2xl font-black text-blue-800 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-cyan-400 dark:to-blue-500 uppercase tracking-widest">
-                Terra</h2>
+                class="text-[16px] font-black text-blue-800 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-cyan-400 dark:to-blue-500 uppercase tracking-widest whitespace-nowrap">
+                TERRA Axis</h2>
         </div> </span>
             <button (click)="onChangeExpandSideBar()"
                 class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors">
@@ -125,6 +125,10 @@
                     class="w-10 h-10 rounded-xl flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors border border-blue-200 dark:border-cyan-500/20 shadow-sm">
                     <i class="fa-solid" [ngClass]="isDarkMode ? 'fa-sun text-yellow-500' : 'fa-moon text-blue-600'"></i>
                 </button>
+                <div
+                    class="h-10 w-10 bg-white/90 rounded-xl p-0.5 shadow-sm border border-slate-200/50 dark:border-cyan-500/20 overflow-hidden">
+                    <img src="../../assets/niot.png" alt="NIOT Logo" class="w-full h-full object-contain">
+                </div>
             </div>
         </div>
 
@@ -134,7 +138,8 @@
 
             <!-- Home Dashboard / Anemometer -->
             <app-dashboard *ngIf="activeTab === 'dashboard'" [anemometerData]="anemometerData"
-                [selectedStation]="selectedStation" [widgetData]="widgetData" [fullDayTrends]="fullDayTrends" [isDarkMode]="isDarkMode"></app-dashboard>
+                [selectedStation]="selectedStation" [widgetData]="widgetData" [fullDayTrends]="fullDayTrends" [isDarkMode]="isDarkMode"
+                [lastDataTimestamp]="lastDataTimestamp"></app-dashboard>
 
 
             <!-- Report Page -->

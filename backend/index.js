@@ -33,7 +33,14 @@ app.use('/api/', authRoutes);
 
 // Instant RAM cache endpoint
 app.get('/api/latest-hour', (req, res) => {
-  res.status(200).json(windCache);
+  const oneHourAgo = Date.now() - 3600000;
+  let latestData = windCache.filter(d => new Date(d.datetime).getTime() >= oneHourAgo);
+  
+  if (latestData.length === 0 && windCache.length > 0) {
+    // If no data in the last hour, return only the absolute last row available in cache
+    latestData = [windCache[0]];
+  }
+  res.status(200).json(latestData);
 });
 
 // Socket.io Connection

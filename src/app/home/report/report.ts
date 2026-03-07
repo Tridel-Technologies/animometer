@@ -41,7 +41,8 @@ export class Report implements OnInit {
     { label: 'Pressure', key: 'pressure', visible: true },
     { label: 'Battery', key: 'battery', visible: true },
     { label: 'Wind Speed', key: 'wind_speed', visible: true },
-    { label: 'Wind Direction', key: 'wind_direction', visible: true }
+    { label: 'Wind Direction', key: 'wind_direction', visible: true },
+    { label: 'Altitude', key: 'altitude', visible: true }
   ];
 
   selectedTimeScale: string = 'Hour';
@@ -130,7 +131,8 @@ export class Report implements OnInit {
       'uv': 'wind_ux', 'uy': 'wind_uy', 'uz': 'wind_uz',
       'rain': 'rain', 'temp': 'temp', 'solar': 'solar',
       'humidity': 'humidity', 'pressure': 'pressure', 'battery': 'battery',
-      'wind_speed': 'wind_speed', 'wind_direction': 'wind_direction'
+      'wind_speed': 'wind_speed', 'wind_direction': 'wind_direction',
+      'altitude': 'altitude'
     };
     const paramId = paramIdMap[col.key];
     const cfg = this.sensorConfigs.find(c => c.parameter_id === paramId);
@@ -169,7 +171,8 @@ export class Report implements OnInit {
         pressure: Number(this.applyConversion(item.pressure || 0, 'pressure')).toFixed(2),
         battery: Number(this.applyConversion(item.battery || 0, 'battery')).toFixed(2),
         wind_speed: Number(this.applyConversion(item.wind_speed || 0, 'wind_speed')).toFixed(2),
-        wind_direction: Number(item.wind_direction || 0).toFixed(2)
+        wind_direction: Number(item.wind_direction || 0).toFixed(2),
+        altitude: Number(item.altitude || 0).toFixed(2)
       }));
 
     } catch (err) {

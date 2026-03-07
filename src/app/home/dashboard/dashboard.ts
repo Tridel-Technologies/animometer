@@ -19,6 +19,7 @@ interface WidgetData {
   trend?: number[];
   lat?: number;
   lon?: number;
+  altitude?: number;
 }
 
 @Component({
@@ -37,12 +38,12 @@ export class Dashboard implements OnInit, OnDestroy, OnChanges {
   @Input() widgetData: WidgetData[] = [];
   @Input() fullDayTrends: { [key: string]: any[] } = {};
   @Input() isDarkMode: boolean = true;
+  @Input() lastDataTimestamp: number = 0;
 
   currentSlide: number = 1;
   private slideInterval: any;
   private extensions = ['webp', 'jpeg', 'jpg', 'png'];
   private currentExtIndex = 0;
-  private lastDataTimestamp: number = Date.now();
   private watchdogInterval: any;
 
   // Stable options for 3D chart to prevent re-initialization on every update
@@ -254,7 +255,8 @@ export class Dashboard implements OnInit, OnDestroy, OnChanges {
       return 'online';
     };
 
-    const displayTime = (now.getTime() - this.lastDataTimestamp < 60000) ? now : new Date(this.lastDataTimestamp);
+    // Use lastDataTimestamp for everything as requested
+    const displayTime = new Date(this.lastDataTimestamp);
     const timestamp = displayTime.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) +
       ' ' + displayTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
 
@@ -269,7 +271,6 @@ export class Dashboard implements OnInit, OnDestroy, OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['anemometerData'] && changes['anemometerData'].currentValue) {
-      this.lastDataTimestamp = Date.now();
       if (!this.currentScheduleName) {
         this.setActualPathToLive();
       } else {
