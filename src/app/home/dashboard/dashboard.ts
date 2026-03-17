@@ -108,6 +108,17 @@ export class Dashboard implements OnInit, OnDestroy, OnChanges {
     return Number(w.val) > w.threshold.val;
   }
 
+  abs(val: number | undefined): number {
+    return Math.abs(val || 0);
+  }
+
+  getWindDirectionCardinal(degrees: number | undefined): string {
+    if (degrees === undefined) return '';
+    const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+    const index = Math.round(((degrees %= 360) < 0 ? degrees + 360 : degrees) / 45) % 8;
+    return directions[index];
+  }
+
   getChartOption(trend: number[] | undefined, isDarkMode: boolean, colorClass: string, id: string): echarts.EChartsOption {
     let rawTrend = trend || [];
     let displayTrend = rawTrend;
@@ -180,7 +191,11 @@ export class Dashboard implements OnInit, OnDestroy, OnChanges {
       tooltip: {
         backgroundColor: isDarkMode ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)',
         borderColor: '#22d3ee',
-        textStyle: { color: textColor }
+        textStyle: { color: textColor },
+        formatter: (params: any) => {
+          const val = params.value;
+          return `U: ${val[0].toFixed(2)}<br/>V: ${val[1].toFixed(2)}<br/>W: ${val[2].toFixed(2)}`;
+        }
       },
       xAxis3D: {
         name: 'U', type: 'value',
@@ -257,8 +272,11 @@ export class Dashboard implements OnInit, OnDestroy, OnChanges {
 
     // Use lastDataTimestamp for everything as requested
     const displayTime = new Date(this.lastDataTimestamp);
-    const timestamp = displayTime.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) +
-      ' ' + displayTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+    const day = String(displayTime.getDate()).padStart(2, '0');
+    const month = String(displayTime.getMonth() + 1).padStart(2, '0');
+    const year = displayTime.getFullYear();
+    const time = displayTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    const timestamp = `${day}/${month}/${year} ${time}`;
 
     return [
       { id: 'anemometer', label: 'Anemometer', icon: 'fa-wind', status: isOnline('anemometer', ['u', 'v', 'w', 'wind_speed', 'wind_direction']), time: timestamp },

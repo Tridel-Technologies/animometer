@@ -45,10 +45,9 @@ export class Report implements OnInit {
     { label: 'Altitude', key: 'altitude', visible: true }
   ];
 
-  selectedTimeScale: string = 'Hour';
+  selectedTimeScale: string = 'Day';
   selectedDate: Date = new Date();
   timeScales = [
-    { label: 'Hour', value: 'Hour' },
     { label: 'Day', value: 'Day' },
     { label: 'Week', value: 'Week' },
     { label: 'Month', value: 'Month' },
@@ -108,6 +107,11 @@ export class Report implements OnInit {
   }
 
   onDateChange() {
+    this.currentPage = 1;
+    this.fetchData();
+  }
+
+  onTimeScaleChange() {
     this.currentPage = 1;
     this.fetchData();
   }
@@ -189,26 +193,47 @@ export class Report implements OnInit {
     const m = selected.getMonth();
     const d = selected.getDate();
 
-    let start = new Date(y, m, d, 0, 0, 0, 0);
-    let end = new Date(y, m, d, 23, 59, 59, 999);
+    let start: Date;
+    let end: Date;
 
     if (this.selectedTimeScale === 'Hour') {
       start = new Date(selected.getTime() - (60 * 60 * 1000));
       end = selected;
+    } else if (this.selectedTimeScale === 'Day') {
+      start = new Date(y, m, d, 0, 0, 0, 0);
+      end = new Date(y, m, d, 23, 59, 59, 999);
     } else if (this.selectedTimeScale === 'Week') {
-      end.setDate(start.getDate() + 7);
+      // 7 days starting from the selected date
+      start = new Date(y, m, d, 0, 0, 0, 0);
+      const nextWeek = new Date(start.getTime() + (7 * 24 * 60 * 60 * 1000));
+      end = new Date(nextWeek.getTime() - 1); // End at 23:59:59 of the 7th day
     } else if (this.selectedTimeScale === 'Month') {
-      start.setDate(1);
+      start = new Date(y, m, 1, 0, 0, 0, 0);
       end = new Date(y, m + 1, 0, 23, 59, 59, 999);
     } else if (this.selectedTimeScale === 'Year') {
       start = new Date(y, 0, 1, 0, 0, 0, 0);
       end = new Date(y, 11, 31, 23, 59, 59, 999);
+    } else {
+      start = new Date(y, m, d, 0, 0, 0, 0);
+      end = new Date(y, m, d, 23, 59, 59, 999);
     }
 
     return {
       start: this.api.formatDateForQuery(start),
       end: this.api.formatDateForQuery(end)
     };
+  }
+
+  getExportFileName(ext: string): string {
+    const y = this.selectedDate.getFullYear();
+    const m = String(this.selectedDate.getMonth() + 1).padStart(2, '0');
+    const d = String(this.selectedDate.getDate()).padStart(2, '0');
+
+    let datePart = `${y}-${m}-${d}`;
+    if (this.selectedTimeScale === 'Month') datePart = `${y}-${m}`;
+    else if (this.selectedTimeScale === 'Year') datePart = `${y}`;
+
+    return `${this.selectedTimeScale}_Report_${datePart}.${ext}`;
   }
 
   exportExcel() {
@@ -222,7 +247,7 @@ export class Report implements OnInit {
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Marine Report');
-    XLSX.writeFile(workbook, `marine_report_${this.selectedDate}.xlsx`);
+    XLSX.writeFile(workbook, this.getExportFileName('xlsx'));
   }
 
   exportPDF() {
@@ -247,7 +272,7 @@ export class Report implements OnInit {
       margin: { top: 30 }
     });
 
-    doc.save(`marine_report_${this.selectedDate}.pdf`);
+    doc.save(this.getExportFileName('pdf'));
   }
 
   exportCSV() {
@@ -261,7 +286,7 @@ export class Report implements OnInit {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `marine_report_${this.selectedDate}.csv`;
+    a.download = this.getExportFileName('csv');
     a.click();
     window.URL.revokeObjectURL(url);
   }
@@ -287,4 +312,7 @@ export class Report implements OnInit {
 
   prevPage() { if (this.currentPage > 1) this.currentPage--; }
   nextPage() { if (this.currentPage < this.totalPages) this.currentPage++; }
+
+  firstPage() { this.currentPage = 1; this.cdr.markForCheck(); }
+  lastPage() { this.currentPage = this.totalPages; this.cdr.markForCheck(); }
 }

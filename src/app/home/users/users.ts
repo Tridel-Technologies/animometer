@@ -22,10 +22,12 @@ interface Designation {
   name: string;
 }
 
+import { SelectModule } from 'primeng/select';
+
 @Component({
   selector: 'app-users',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SelectModule],
   templateUrl: './users.html',
   styleUrl: './users.css'
 })
@@ -38,6 +40,11 @@ export class Users implements OnInit {
   users: User[] = [];
   roles: Role[] = [];
   designations: Designation[] = [];
+  isAdmin(name: string): boolean {
+    if (!name) return false;
+    const n = name.toLowerCase();
+    return n.includes('admin') || n.includes('administrator');
+  }
 
   showUserModal = false;
   showRoleModal = false;
@@ -145,6 +152,12 @@ export class Users implements OnInit {
   }
 
   async deleteUser(id: number) {
+    const user = this.users.find(u => u.id === id);
+    if (user && this.isAdmin(user.role)) {
+      this.addToast('Access Denied', 'Administrator accounts cannot be deleted.', 'error');
+      return;
+    }
+
     if (confirm('Permanently delete this user?')) {
       this.isLoading = true;
       this.cdr.markForCheck();
@@ -215,7 +228,20 @@ export class Users implements OnInit {
   }
 
   async deleteRole(id: number) {
-    if (confirm('Delete this role? Users assigned to it will need a new role.')) {
+    const role = this.roles.find(r => r.id === id);
+    if (role && this.isAdmin(role.name)) {
+      this.addToast('Access Denied', 'The Administrator role cannot be deleted.', 'error');
+      return;
+    }
+
+    // Check if any user is currently assigned to this role
+    const isAssigned = this.users.some(u => u.role === role?.name);
+    if (isAssigned) {
+      this.addToast('Role In Use', 'Please first remove or alter the role in that user then you can delete the role.', 'error');
+      return;
+    }
+
+    if (confirm('Delete this role?')) {
       this.isLoading = true;
       this.cdr.markForCheck();
       try {

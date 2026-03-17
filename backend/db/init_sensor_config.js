@@ -23,9 +23,9 @@ const initSensorConfig = async () => {
             );
 
             INSERT INTO tb_sensor_config (parameter_id, parameter_name, unit, threshold_value, has_threshold) VALUES
-                ('wind_ux', 'Wind UX', 'm/s', 15.0, TRUE),
-                ('wind_uy', 'Wind UY', 'm/s', 15.0, TRUE),
-                ('wind_uz', 'Wind UZ', 'm/s', 10.0, TRUE),
+                ('wind_ux', 'Wind U', 'm/s', 15.0, TRUE),
+                ('wind_uy', 'Wind V', 'm/s', 15.0, TRUE),
+                ('wind_uz', 'Wind W', 'm/s', 10.0, TRUE),
                 ('rain', 'Rainfall', 'mm', 50.0, TRUE),
                 ('temp', 'Temperature', '°C', 40.0, TRUE),
                 ('solar', 'Solar Radiation', 'W/m²', 1000.0, TRUE),

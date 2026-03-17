@@ -17,7 +17,8 @@
     <div class="flex flex-col gap-6">
         <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
-                <h2 class="text-2xl font-black text-slate-800 dark:text-white tracking-tight">System Administration</h2>
+                <h2 class="text-2xl font-black text-slate-800 dark:text-white tracking-tight uppercase">System Administration</h2>
+
                 <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mt-1">Access Control &
                     Personnel Management</p>
             </div>
@@ -50,7 +51,7 @@
             </button>
             <button *ngIf="activeTab === 'roles'" (click)="openRoleModal()"
                 class="px-6 py-2.5 rounded-xl bg-indigo-600 text-white font-black text-xs uppercase tracking-widest hover:bg-indigo-700 shadow-lg shadow-indigo-500/30 transition-all flex items-center gap-3">
-                <i class="fa-solid fa-shield-plus"></i> New Role
+                <i class="fa-solid fa-shield-halved"></i> New Role
             </button>
             <button *ngIf="activeTab === 'designations'" (click)="openDesignationModal()"
                 class="px-6 py-2.5 rounded-xl bg-cyan-600 text-white font-black text-xs uppercase tracking-widest hover:bg-cyan-700 shadow-lg shadow-cyan-500/30 transition-all flex items-center gap-3">
@@ -106,7 +107,7 @@
                                 Set'}}</span>
                         </td>
                         <td class="px-6 py-4 text-right">
-                            <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div *ngIf="!isAdmin(u.role)" class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button (click)="openUserModal(u)"
                                     class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 transition-all">
                                     <i class="fa-solid fa-pen-to-square text-xs"></i>
@@ -163,7 +164,7 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 text-right">
-                            <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div *ngIf="!isAdmin(r.name)" class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button (click)="openRoleModal(r)"
                                     class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/20 transition-all">
                                     <i class="fa-solid fa-gears text-xs"></i>
@@ -257,26 +258,20 @@
                         <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Security
                             Role</label>
                         <div class="relative">
-                            <select [(ngModel)]="currentUser.role"
-                                class="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-4 text-sm font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all appearance-none cursor-pointer">
-                                <option value="">Assign Role</option>
-                                <option *ngFor="let r of roles" [value]="r.name">{{r.name}}</option>
-                            </select>
-                            <i
-                                class="fa-solid fa-chevron-down absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none text-xs"></i>
+                            <p-select [options]="roles" [(ngModel)]="currentUser.role" optionLabel="name" optionValue="name"
+                                placeholder="Assign Role" class="w-full" appendTo="body"
+                                styleClass="w-full !rounded-2xl !bg-slate-50 dark:!bg-slate-800 !border-0 !py-1 !text-sm !font-bold">
+                            </p-select>
                         </div>
                     </div>
                     <div class="space-y-2">
                         <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Onboard
                             Position</label>
                         <div class="relative">
-                            <select [(ngModel)]="currentUser.designation"
-                                class="w-full bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl px-5 py-4 text-sm font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all appearance-none cursor-pointer">
-                                <option value="">Assign Position</option>
-                                <option *ngFor="let d of designations" [value]="d.name">{{d.name}}</option>
-                            </select>
-                            <i
-                                class="fa-solid fa-chevron-down absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none text-xs"></i>
+                            <p-select [options]="designations" [(ngModel)]="currentUser.designation" optionLabel="name" optionValue="name"
+                                placeholder="Assign Position" class="w-full" appendTo="body"
+                                styleClass="w-full !rounded-2xl !bg-slate-50 dark:!bg-slate-800 !border-0 !py-1 !text-sm !font-bold">
+                            </p-select>
                         </div>
                     </div>
                 </div>

@@ -24,6 +24,34 @@ export class MapComponent implements OnInit, OnDestroy, OnChanges {
   map: any;
   private platformId = inject(PLATFORM_ID);
   private currentMarkers: mapboxgl.Marker[] = [];
+  public isOfflineMode = false;
+  private connectivityCheckInterval: any;
+
+  private readonly OFFLINE_STYLE: any = {
+    version: 8,
+    sources: {
+      'offline-tiles': {
+        type: 'raster',
+        tiles: [window.location.origin + '/assets/full-offline-map/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        attribution: 'Offline Map (TERRA AXIS)'
+      }
+    },
+    layers: [
+      {
+        id: 'background',
+        type: 'background',
+        paint: { 'background-color': '#0f172a' }
+      },
+      {
+        id: 'offline-tiles',
+        type: 'raster',
+        source: 'offline-tiles',
+        minzoom: 4,
+        maxzoom: 5
+      }
+    ]
+  };
 
   // Animation State
   isAnimating = false;
@@ -31,6 +59,8 @@ export class MapComponent implements OnInit, OnDestroy, OnChanges {
   private animationMarker: mapboxgl.Marker | null = null;
   private animationFrameId: any;
   private totalDuration = 20000; // Increased to 20s for smoother movement
+  private initialFitDone = false;
+  private lastRouteJson = '';
   private staticShipMarker: mapboxgl.Marker | null = null;
 
   async ngOnInit() {
@@ -38,47 +68,120 @@ export class MapComponent implements OnInit, OnDestroy, OnChanges {
 
     const mapboxgl = (await import('mapbox-gl')).default;
 
+    // Check initial connectivity
+    const isInitialOffline = !navigator.onLine;
+
     this.map = new mapboxgl.Map({
       accessToken: 'pk.eyJ1IjoiZ2FuYTg2MDIiLCJhIjoiY2xzdmJtOHoyMW4yODJsczA1MHVjdWY3ZSJ9.vdG-cAO4j-E7_-wnQNPW7w',
       container: this.mapContainer.nativeElement,
-      style: 'mapbox://styles/mapbox/streets-v12',
+      style: isInitialOffline ? this.OFFLINE_STYLE : 'mapbox://styles/mapbox/streets-v12',
       center: [80.263522, 12.749564],
-      zoom: 3,
+      zoom: isInitialOffline ? 5 : 3,
       pitch: 45,
+      minZoom: 4,
+      maxZoom: isInitialOffline ? 5 : 22,
+      attributionControl: false
     });
+
+
+    if (isInitialOffline) {
+      this.isOfflineMode = true;
+    }
 
     this.map.on('load', () => {
       this.drawDynamicRoute();
     });
 
+    // Handle tile loading errors (potential connection loss or restricted access)
+    this.map.on('error', (e: any) => {
+      if (e.error && !this.isOfflineMode) {
+        // Only switch if it's a tile loading error or similar connectivity issue
+        if (e.error.status === 401 || e.error.status === 403 || !navigator.onLine) {
+          this.switchToOffline();
+        }
+      }
+    });
+
     this.map.on('click', () => {
       this.station.setSelectedStation(null);
+    });
+
+    // Connectivity listeners
+    window.addEventListener('online', () => this.switchToOnline());
+    window.addEventListener('offline', () => this.switchToOffline());
+
+    // Low speed detection / Load timeout
+    setTimeout(() => {
+      if (this.map && !this.map.isStyleLoaded() && !this.isOfflineMode) {
+        console.warn('Map loading slow, switching to offline fallback');
+        this.switchToOffline();
+      }
+    }, 8000);
+  }
+
+  switchToOffline() {
+    if (this.isOfflineMode || !this.map) return;
+    this.isOfflineMode = true;
+
+    // Stop any ongoing animations
+    if (this.isAnimating) this.stopAnimation();
+
+    // Force immediate zoom within 4-5 range to prevent black screen (missing tiles)
+    const currentZoom = this.map.getZoom();
+    if (currentZoom > 5) {
+      this.map.jumpTo({ zoom: 5 });
+    } else if (currentZoom < 4) {
+      this.map.jumpTo({ zoom: 4 });
+    }
+
+    this.map.setStyle(this.OFFLINE_STYLE);
+    this.map.setMaxZoom(5);
+    this.map.setMinZoom(4);
+
+    this.map.once('style.load', () => {
+      this.drawDynamicRoute();
+    });
+  }
+
+  switchToOnline() {
+    if (!this.isOfflineMode || !this.map) return;
+    this.isOfflineMode = false;
+    this.map.setStyle('mapbox://styles/mapbox/streets-v12');
+    this.map.setMaxZoom(22);
+    this.map.setMinZoom(0);
+    this.map.once('style.load', () => {
+      this.drawDynamicRoute();
     });
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if ((changes['routeCoordinates'] || changes['actualPath']) && this.map && this.map.isStyleLoaded()) {
+    if ((changes['routeCoordinates'] || changes['actualPath'] || changes['currentDatetime']) && this.map && this.map.isStyleLoaded()) {
       this.drawDynamicRoute();
     }
   }
 
   drawDynamicRoute() {
-    if (!this.map) return;
+    if (!this.map || !this.map.isStyleLoaded()) return;
 
-    this.currentMarkers.forEach(marker => marker.remove());
-    this.currentMarkers = [];
+    const routeJson = JSON.stringify(this.routeCoordinates || []);
+    const routeChanged = routeJson !== this.lastRouteJson;
 
-    if (this.map.getLayer('track-line')) this.map.removeLayer('track-line');
-    if (this.map.getSource('track-source')) this.map.removeSource('track-source');
-    if (this.map.getLayer('actual-line')) this.map.removeLayer('actual-line');
-    if (this.map.getSource('actual-source')) this.map.removeSource('actual-source');
+    if (routeChanged) {
+      this.currentMarkers.forEach(marker => marker.remove());
+      this.currentMarkers = [];
+      this.staticShipMarker = null;
+      this.lastRouteJson = routeJson;
+      this.initialFitDone = false;
+
+      // Force-remove layers/sources if they exist to start fresh for a new route
+      if (this.map.getLayer('track-line')) this.map.removeLayer('track-line');
+      if (this.map.getSource('track-source')) this.map.removeSource('track-source');
+      if (this.map.getLayer('actual-line')) this.map.removeLayer('actual-line');
+      if (this.map.getSource('actual-source')) this.map.removeSource('actual-source');
+    }
 
     const hasRoute = this.routeCoordinates && this.routeCoordinates.length > 0;
-    let hasActual = this.actualPath && this.actualPath.length > 0;
-
-    // Ensure actualPath is chronological (if newest is at index 0, reverse it)
-    // We check if the last point's datetime (if available) or simply assume DESC and reverse
-    // The most robust way is to check the data source, but here we can force chronological
+    const hasActual = this.actualPath && this.actualPath.length > 0;
 
     let shipLocation: [number, number] | null = null;
     if (hasActual) {
@@ -88,8 +191,6 @@ export class MapComponent implements OnInit, OnDestroy, OnChanges {
     }
 
     if (shipLocation) {
-      this.staticShipMarker = this.addMarker(shipLocation, 'Current Location', 'assets/ship.png');
-
       const popupHtml = `
           <div style="padding: 10px; font-family: 'Inter', sans-serif; text-align: left; min-width: 180px; border-radius: 12px; background: rgba(15, 23, 42, 0.95); color: white;">
             <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -109,45 +210,72 @@ export class MapComponent implements OnInit, OnDestroy, OnChanges {
             </div>
           </div>
        `;
-      const popup = new mapboxgl.Popup({
-        offset: 25,
-        closeButton: false,
-        className: 'modern-map-popup'
-      }).setHTML(popupHtml);
 
-      this.staticShipMarker.setPopup(popup);
-      this.currentMarkers.push(this.staticShipMarker);
+      if (this.staticShipMarker) {
+        this.staticShipMarker.setLngLat(shipLocation);
+        const popup = this.staticShipMarker.getPopup();
+        if (popup) popup.setHTML(popupHtml);
+      } else {
+        this.staticShipMarker = this.addMarker(shipLocation, 'Current Location', 'assets/ship.png');
+        const popup = new mapboxgl.Popup({
+          offset: 25,
+          closeButton: false,
+          className: 'modern-map-popup'
+        }).setHTML(popupHtml);
 
-      const bounds = new mapboxgl.LngLatBounds();
-      if (hasRoute) this.routeCoordinates.forEach(c => bounds.extend(c));
-      if (hasActual) this.actualPath.forEach(c => bounds.extend(c));
-
-      if (!bounds.isEmpty()) {
-        setTimeout(() => {
-          this.map.fitBounds(bounds, { padding: 100, maxZoom: 14, duration: 1000 });
-        }, 300);
+        this.staticShipMarker.setPopup(popup);
+        this.currentMarkers.push(this.staticShipMarker);
       }
 
-      // Orientation: Point towards the 'End Marker' (destination)
+      // Update orientation
+      let bearing = 0;
       if (hasRoute && this.routeCoordinates.length > 0) {
         const destination = this.routeCoordinates[this.routeCoordinates.length - 1];
-        const bearing = this.calculateBearing(shipLocation, destination);
-        this.staticShipMarker.setRotation(bearing);
+        bearing = this.calculateBearing(shipLocation, destination);
       } else if (hasActual && this.actualPath.length >= 2) {
-        // Fallback to tracking bearing if no planned route is available
         const p1 = this.actualPath[this.actualPath.length - 2];
         const p2 = this.actualPath[this.actualPath.length - 1];
-        const bearing = this.calculateBearing(p1, p2);
-        this.staticShipMarker.setRotation(bearing);
+        bearing = this.calculateBearing(p1, p2);
+      }
+      if (this.staticShipMarker) this.staticShipMarker.setRotation(bearing);
+
+      if (!this.initialFitDone) {
+        const bounds = new mapboxgl.LngLatBounds();
+        if (hasRoute) this.routeCoordinates.forEach(c => bounds.extend(c));
+        if (hasActual) this.actualPath.forEach(c => bounds.extend(c));
+
+        if (!bounds.isEmpty()) {
+          this.initialFitDone = true;
+          setTimeout(() => {
+            this.map.fitBounds(bounds, {
+              padding: 100,
+              maxZoom: this.isOfflineMode ? 5 : 14,
+              minZoom: this.isOfflineMode ? 4 : 0,
+              duration: 1000
+            });
+          }, 300);
+        }
       }
     }
 
     if (hasRoute) {
-      this.routeCoordinates.forEach((coord, index) => {
-        if (index === 0) return;
-        const marker = this.addMarker(coord, `Station ${index + 1}`, 'assets/loc.png');
-        if (marker) this.currentMarkers.push(marker);
-      });
+      // Re-draw station markers only if the route actually changed OR if they are missing
+      // Since markers are tracked in currentMarkers, we check if we have any besides the ship
+      const stationMarkersExist = this.currentMarkers.some(m => m !== this.staticShipMarker);
+      if (routeChanged || !stationMarkersExist) {
+        // Clear old station markers first if it's a route change
+        if (routeChanged) {
+          this.currentMarkers = this.currentMarkers.filter(m => m === this.staticShipMarker);
+        }
+
+        this.routeCoordinates.forEach((coord, index) => {
+          if (index === 0) return;
+          const marker = this.addMarker(coord, `Station ${index + 1}`, 'assets/loc.png');
+          if (marker) this.currentMarkers.push(marker);
+        });
+      }
+
+      // Always ensure the track line exists or is updated
       this.addTrackPath(this.routeCoordinates, 'track-source', 'track-line', 'red', true);
     }
 
@@ -173,7 +301,7 @@ export class MapComponent implements OnInit, OnDestroy, OnChanges {
     // Sequence: First zoom in, then move
     this.map.flyTo({
       center: path[0],
-      zoom: 14,
+      zoom: this.isOfflineMode ? 5 : 14,
       pitch: 45,
       duration: 1500,
       essential: true
@@ -251,6 +379,14 @@ export class MapComponent implements OnInit, OnDestroy, OnChanges {
       this.animationMarker = new mapboxgl.Marker({ element: el, anchor: 'center', rotationAlignment: 'map' })
         .setLngLat(coords)
         .addTo(this.map);
+    } else {
+      // Ensure size is correct if mode changed
+      const el = this.animationMarker.getElement();
+      const currentSize = this.isOfflineMode ? '40px' : '100px';
+      if (el.style.width !== currentSize) {
+        el.style.width = currentSize;
+        el.style.height = currentSize;
+      }
     }
     this.animationMarker.setLngLat(coords);
     this.animationMarker.setRotation(bearing);
@@ -258,13 +394,22 @@ export class MapComponent implements OnInit, OnDestroy, OnChanges {
 
   addTrackPath(coordinates: [number, number][], sourceId: string, layerId: string, color: string, isDashed: boolean) {
     if (!this.map) return;
-    if (this.map.getLayer(layerId)) this.map.removeLayer(layerId);
-    if (this.map.getSource(sourceId)) this.map.removeSource(sourceId);
+
+    const source = this.map.getSource(sourceId) as mapboxgl.GeoJSONSource;
+    if (source) {
+      source.setData({
+        type: 'Feature',
+        properties: {},
+        geometry: { type: 'LineString', coordinates: coordinates }
+      });
+      return;
+    }
 
     this.map.addSource(sourceId, {
       type: 'geojson',
       data: {
         type: 'Feature',
+        properties: {},
         geometry: { type: 'LineString', coordinates: coordinates }
       }
     });
@@ -276,7 +421,7 @@ export class MapComponent implements OnInit, OnDestroy, OnChanges {
       layout: { 'line-join': 'round', 'line-cap': 'round' },
       paint: {
         'line-color': color,
-        'line-width': 4,
+        'line-width': this.isOfflineMode ? 2 : 4,
         ...(isDashed ? { 'line-dasharray': [1, 2] } : {})
       }
     });
@@ -301,8 +446,9 @@ export class MapComponent implements OnInit, OnDestroy, OnChanges {
   create3DShipElement(): HTMLElement {
     const el = document.createElement('div');
     el.className = 'ship-icon-container';
-    el.style.width = '100px';
-    el.style.height = '100px';
+    const size = this.isOfflineMode ? '40px' : '100px';
+    el.style.width = size;
+    el.style.height = size;
 
     const shipImg = document.createElement('div');
     shipImg.style.width = '100%';
@@ -321,15 +467,16 @@ export class MapComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   focusMarker(coordinates: [number, number]) {
-    this.map.flyTo({ center: coordinates, zoom: 14, pitch: 45, essential: true });
+    this.map.flyTo({ center: coordinates, zoom: this.isOfflineMode ? 5 : 14, pitch: 45, essential: true });
   }
 
   getCustomMarkerElement(icon: string): HTMLElement {
     const el = document.createElement('div');
     el.className = 'custom-marker';
+    const size = this.isOfflineMode ? '15px' : '50px';
     el.style.backgroundImage = `url(${icon})`;
-    el.style.width = '50px';
-    el.style.height = '50px';
+    el.style.width = size;
+    el.style.height = size;
     el.style.backgroundSize = '100% 100%';
     el.style.cursor = 'pointer';
     return el;

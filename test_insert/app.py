@@ -23,14 +23,20 @@ state = {
     "wind_uy": -2.1,
     "wind_uz": 0.5,
     "battery": 98.2,
-    "lat": 11.9416, # Center of Pondicherry coast
+    "lat": 11.9416, # Center of Pondicherry coast 11.474161, 73.718675
     "lon": 79.8083,
-    "altitude": 15.0
+    "altitude": 15.0,
+    "wind_speed": 4.7,
+    "wind_direction": 120.0,
+    "sos": 343.5 # Speed of Sound
 }
 
 def get_solar_rad(dt):
     """Simulates solar radiation based on hour of day (0 at night, peak at noon)"""
-    hour = dt.hour + dt.minute/60.0
+    # Use local hour for realistic testing during the day
+    local_dt = dt.astimezone() # Conver to system local timezone
+    hour = local_dt.hour + local_dt.minute/60.0
+    
     # Bell curve approximation: peak at 12:00
     if 6 <= hour <= 18:
         # Scale radiation based on proximity to 12pm
@@ -42,15 +48,27 @@ def update_state():
     state["temp"] = max(15.0, min(42.0, state["temp"] + random.uniform(-0.1, 0.1)))
     state["humidity"] = max(30.0, min(98.0, state["humidity"] + random.uniform(-0.2, 0.2)))
     state["pressure"] = max(950.0, min(1060.0, state["pressure"] + random.uniform(-0.05, 0.05)))
-    state["wind_uv"] = max(0, min(50.0, state["wind_uv"] + random.uniform(-0.3, 0.3)))
-    state["wind_uy"] = max(0, min(25.0, state["wind_uy"] + random.uniform(-0.3, 0.3)))
-    state["wind_uz"] = max(0, min(15.0, state["wind_uz"] + random.uniform(-0.1, 0.1)))
+    
+    # Wind components
+    state["wind_uv"] += random.uniform(-0.3, 0.3)
+    state["wind_uy"] += random.uniform(-0.3, 0.3)
+    state["wind_uz"] += random.uniform(-0.1, 0.1)
+    
+    # Calculate derived wind parameters
+    # Horizontal speed
+    state["wind_speed"] = math.sqrt(state["wind_uv"]**2 + state["wind_uy"]**2)
+    # Direction in degrees (0 to 360)
+    state["wind_direction"] = (math.atan2(state["wind_uy"], state["wind_uv"]) * 180 / math.pi + 360) % 360
+    # Speed of sound typically varies with temperature: sqrt(gamma * R * T_kelvin)
+    # Approx: 331.3 + 0.6 * temp
+    state["sos"] = 331.3 + 0.6 * state["temp"] + random.uniform(-0.1, 0.1)
+
     state["battery"] -= 0.001 # Slow drain simulation
     if state["battery"] < 10: state["battery"] = 100.0 # Simulate recharge
     
     # Slight drift in position (vessel movement)
-    state["lat"] += random.uniform(-0.00001, 0.00001)
-    state["lon"] += random.uniform(-0.00001, 0.00001)
+    state["lat"] += state["lat"] * random.uniform(-0.00001, 0.00001)
+    state["lon"] += state["lon"] * random.uniform(-0.00001, 0.00001)
     state["altitude"] = max(0, min(2000.0, state["altitude"] + random.uniform(-0.1, 0.1)))
 
 def start_live_insertion():
@@ -73,13 +91,13 @@ def start_live_insertion():
             
             solar = get_solar_rad(current_time)
             # Occasional rainfall logic (1% chance to start/stop rain)
-            rain = random.uniform(0, 5) if random.random() > 0.95 else 0.0
+            rain = random.uniform(0, 5) 
 
             cur.execute(
                 """
                 INSERT INTO tb_wind 
-                (dateTime, wind_uv, wind_uy, wind_uz, rain_fall, temp, solar_rad, lat, lon, altitude, humidity, pressure, battery, station_name) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                (dateTime, wind_uv, wind_uy, wind_uz, rain_fall, temp, solar_rad, lat, lon, altitude, humidity, pressure, battery, station_name, wind_speed, wind_direction, sos) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     current_time,
@@ -95,12 +113,15 @@ def start_live_insertion():
                     state["humidity"],
                     state["pressure"],
                     state["battery"],
-                    station_name
+                    station_name,
+                    state["wind_speed"],
+                    state["wind_direction"],
+                    state["sos"]
                 )
             )
 
             conn.commit()
-            print(f"[{current_time.strftime('%H:%M:%S')}] T: {state['temp']:.1f}°C | W: {abs(state['wind_uv']):.1f}m/s | S: {solar:.0f}W/m² | B: {state['battery']:.1f}%")
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] T: {state['temp']:.1f}°C | W: {state['wind_speed']:.1f}m/s | S: {solar:.0f}W/m² | B: {state['battery']:.1f}% | SOS: {state['sos']:.1f}")
             
             time.sleep(1)
 

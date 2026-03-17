@@ -142,10 +142,38 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
   }
 
   showInitialUnitsDialog: boolean = false;
+  isManualUnitEdit: boolean = false;
   showStationDialog: boolean = false;
   shipName: string = '';
   initialUnits: any[] = [];
   sensorConfigs: any[] = [];
+  currentYear = new Date().getFullYear();
+
+  getUTCTime(): string {
+    return this.currentDateTime.toLocaleString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+      timeZone: 'UTC'
+    }).replace(',', '');
+  }
+
+  getISTTime(): string {
+    return this.currentDateTime.toLocaleString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+      timeZone: 'Asia/Kolkata'
+    }).replace(',', '');
+  }
 
   async ngOnInit(): Promise<void> {
     const userJson = localStorage.getItem('station_user');
@@ -286,6 +314,7 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
     // Update time every second
     this.timeSubscription = interval(1000).subscribe(() => {
       this.currentDateTime = new Date();
+      this.cdr.detectChanges();
     });
   }
 
@@ -337,6 +366,7 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
           this.initialUnitsSelection[u.parameter_id] = u.unit;
         });
       } else {
+        this.isManualUnitEdit = false;
         this.showInitialUnitsDialog = true;
       }
       this.cdr.detectChanges();
@@ -403,6 +433,7 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
       await this.apiService.updateInitialUnits(unitsToSave);
       this.initialUnits = unitsToSave;
       this.showInitialUnitsDialog = false;
+      this.isManualUnitEdit = false;
       this.fetchSensorConfigs(); // Refresh configs after saving units
       this.cdr.detectChanges();
     } catch (error) {
@@ -411,6 +442,7 @@ export class Home implements OnInit, OnDestroy, AfterViewInit {
   }
 
   triggerInitialUnitsEdit() {
+    this.isManualUnitEdit = true;
     this.showInitialUnitsDialog = true;
     this.cdr.detectChanges();
   }

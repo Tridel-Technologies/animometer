@@ -31,13 +31,14 @@ export class WindChartComponent implements OnInit, OnChanges {
   @Input() height!: number;
   @Input() width!: number;
   @Input() windData!: any[];
+  @Input() color: string = '#2563eb';
 
   ngOnInit(): void {
     this.updateChart();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if ((changes['windData'] || changes['width']) && this.windData) {
+    if ((changes['windData'] || changes['width'] || changes['color']) && this.windData) {
       this.updateChart();
     }
   }
@@ -83,8 +84,8 @@ export class WindChartComponent implements OnInit, OnChanges {
         symbol: 'circle',
         symbolSize: 6,
         z: 10,
-        lineStyle: { width: 3 },
-        itemStyle: { borderWidth: 2, borderColor: '#fff' }
+        lineStyle: { width: 3, color: this.color },
+        itemStyle: { borderWidth: 2, borderColor: '#fff', color: this.color }
       }
     ];
 
@@ -130,16 +131,7 @@ export class WindChartComponent implements OnInit, OnChanges {
           return tip;
         }
       },
-      visualMap: {
-        show: false,
-        dimension: 1,
-        pieces: [
-          { gt: 0, lte: 20, color: '#2563eb' },
-          { gt: 20, lte: 25, color: '#f59e0b' },
-          { gt: 25, color: '#ef4444' }
-        ],
-        outOfRange: { color: '#2563eb' }
-      },
+      visualMap: null, // Disable visualMap for individual colors
       grid: { top: 20, right: hasDirection ? 45 : 15, bottom: 20, left: 45, containLabel: true },
       xAxis: {
         type: 'category',

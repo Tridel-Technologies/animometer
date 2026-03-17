@@ -1,0 +1,191 @@
+Traceback (most recent call last):
+  File "C:\script\listen.py", line 78, in <module>
+    file_name = f"{fileNameCreate(decoded_data)}.csv"
+                   ~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\script\listen.py", line 22, in fileNameCreate
+    return f"{date[1]}{date[0]}{date[2]}_{timee[0]}{timee[1]}{timee[2]}"
+                                                    ~~~~~^^^
+IndexError: list index out of range
+Traceback (most recent call last):
+  File "C:\script\listen.py", line 78, in <module>
+    file_name = f"{fileNameCreate(decoded_data)}.csv"
+                   ~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\script\listen.py", line 22, in fileNameCreate
+    return f"{date[1]}{date[0]}{date[2]}_{timee[0]}{timee[1]}{timee[2]}"
+                                                              ~~~~~^^^
+IndexError: list index out of range
+Traceback (most recent call last):
+  File "C:\script\listen.py", line 82, in <module>
+    with open(f"{outputDir}/{file_name}", "w", encoding="utf-8") as file:
+         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'data/03072026_0500107/03/2026.csv'
+Traceback (most recent call last):
+  File "C:\script\listen.py", line 78, in <module>
+    file_name = f"{fileNameCreate(decoded_data)}.csv"
+                   ~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\script\listen.py", line 22, in fileNameCreate
+    return f"{date[1]}{date[0]}{date[2]}_{timee[0]}{timee[1]}{timee[2]}"
+              ~~~~^^^
+IndexError: list index out of range
+Traceback (most recent call last):
+  File "C:\script\listen.py", line 78, in <module>
+    file_name = f"{fileNameCreate(decoded_data)}.csv"
+                   ~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\script\listen.py", line 22, in fileNameCreate
+    return f"{date[1]}{date[0]}{date[2]}_{timee[0]}{timee[1]}{timee[2]}"
+              ~~~~^^^
+IndexError: list index out of range
+Traceback (most recent call last):
+  File "C:\script\listen.py", line 78, in <module>
+    file_name = f"{fileNameCreate(decoded_data)}.csv"
+                   ~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\script\listen.py", line 22, in fileNameCreate
+    return f"{date[1]}{date[0]}{date[2]}_{timee[0]}{timee[1]}{timee[2]}"
+                                                              ~~~~~^^^
+IndexError: list index out of range
+Traceback (most recent call last):
+  File "C:\script\listen.py", line 82, in <module>
+    with open(f"{outputDir}/{file_name}", "w", encoding="utf-8") as file:
+         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'data/03072026_06132007/03/2026.csv'
+Traceback (most recent call last):
+  File "C:\script\listen.py", line 78, in <module>
+    file_name = f"{fileNameCreate(decoded_data)}.csv"
+                   ~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\script\listen.py", line 22, in fileNameCreate
+    return f"{date[1]}{date[0]}{date[2]}_{timee[0]}{timee[1]}{timee[2]}"
+                                                              ~~~~~^^^
+IndexError: list index out of range
+Traceback (most recent call last):
+  File "C:\script\listen.py", line 78, in <module>
+    file_name = f"{fileNameCreate(decoded_data)}.csv"
+                   ~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\script\listen.py", line 22, in fileNameCreate
+    return f"{date[1]}{date[0]}{date[2]}_{timee[0]}{timee[1]}{timee[2]}"
+                                                              ~~~~~^^^
+IndexError: list index out of range
+Traceback (most recent call last):
+  File "C:\script\listen.py", line 78, in <module>
+    file_name = f"{fileNameCreate(decoded_data)}.csv"
+                   ~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\script\listen.py", line 22, in fileNameCreate
+    return f"{date[1]}{date[0]}{date[2]}_{timee[0]}{timee[1]}{timee[2]}"
+                                                    ~~~~~^^^
+IndexError: list index out of range
+Traceback (most recent call last):
+  File "C:\script\listen.py", line 78, in <module>
+    file_name = f"{fileNameCreate(decoded_data)}.csv"
+                   ~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\script\listen.py", line 22, in fileNameCreate
+    return f"{date[1]}{date[0]}{date[2]}_{timee[0]}{timee[1]}{timee[2]}"
+              ~~~~^^^
+IndexError: list index out of range
+Traceback (most recent call last):
+  File "C:\script\listen.py", line 78, in <module>
+    file_name = f"{fileNameCreate(decoded_data)}.csv"
+                   ~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\script\listen.py", line 22, in fileNameCreate
+    return f"{date[1]}{date[0]}{date[2]}_{timee[0]}{timee[1]}{timee[2]}"
+              ~~~~^^^
+IndexError: list index out of range
+Traceback (most recent call last):
+  File "C:\script\listen.py", line 78, in <module>
+    file_name = f"{fileNameCreate(decoded_data)}.csv"
+                   ~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\script\listen.py", line 17, in fileNameCreate
+    timee = splited[1]
+            ~~~~~~~^^^
+IndexError: list index out of range
+Traceback (most recent call last):
+  File "C:\script\listen.py", line 78, in <module>
+    file_name = f"{fileNameCreate(decoded_data)}.csv"
+                   ~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\script\listen.py", line 22, in fileNameCreate
+    return f"{date[1]}{date[0]}{date[2]}_{timee[0]}{timee[1]}{timee[2]}"
+                                                    ~~~~~^^^
+IndexError: list index out of range
+Traceback (most recent call last):
+  File "C:\script\listen.py", line 78, in <module>
+    file_name = f"{fileNameCreate(decoded_data)}.csv"
+                   ~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\script\listen.py", line 22, in fileNameCreate
+    return f"{date[1]}{date[0]}{date[2]}_{timee[0]}{timee[1]}{timee[2]}"
+                                ~~~~^^^
+IndexError: list index out of range
+Traceback (most recent call last):
+  File "C:\script\listen.py", line 78, in <module>
+    file_name = f"{fileNameCreate(decoded_data)}.csv"
+                   ~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\script\listen.py", line 22, in fileNameCreate
+    return f"{date[1]}{date[0]}{date[2]}_{timee[0]}{timee[1]}{timee[2]}"
+                                                    ~~~~~^^^
+IndexError: list index out of range
+Traceback (most recent call last):
+  File "C:\script\listen.py", line 82, in <module>
+    with open(f"{outputDir}/{file_name}", "w", encoding="utf-8") as file:
+         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'data/03072026_09234807/03/2026.csv'
+Traceback (most recent call last):
+  File "C:\script\listen.py", line 59, in <module>
+    ser = find_active_port()
+  File "C:\script\listen.py", line 46, in find_active_port
+    if ser.in_waiting > 0:
+       ^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\site-packages\serial\serialwin32.py", line 258, in in_waiting
+    if not win32.ClearCommError(self._port_handle, ctypes.byref(flags), ctypes.byref(comstat)):
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "C:\script\listen.py", line 59, in <module>
+    ser = find_active_port()
+  File "C:\script\listen.py", line 45, in find_active_port
+    while time.time() - start_time < 90:
+          ~~~~~~~~~^^
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "C:\script\listen.py", line 59, in <module>
+    ser = find_active_port()
+  File "C:\script\listen.py", line 46, in find_active_port
+    if ser.in_waiting > 0:
+       ^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\site-packages\serial\serialwin32.py", line 258, in in_waiting
+    if not win32.ClearCommError(self._port_handle, ctypes.byref(flags), ctypes.byref(comstat)):
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "C:\script\listen.py", line 59, in <module>
+    ser = find_active_port()
+  File "C:\script\listen.py", line 46, in find_active_port
+    if ser.in_waiting > 0:
+       ^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\site-packages\serial\serialwin32.py", line 258, in in_waiting
+    if not win32.ClearCommError(self._port_handle, ctypes.byref(flags), ctypes.byref(comstat)):
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "C:\script\listen.py", line 59, in <module>
+    ser = find_active_port()
+  File "C:\script\listen.py", line 46, in find_active_port
+    if ser.in_waiting > 0:
+       ^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\site-packages\serial\serialwin32.py", line 258, in in_waiting
+    if not win32.ClearCommError(self._port_handle, ctypes.byref(flags), ctypes.byref(comstat)):
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "C:\script\listen.py", line 59, in <module>
+    ser = find_active_port()
+  File "C:\script\listen.py", line 46, in find_active_port
+    if ser.in_waiting > 0:
+       ^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\site-packages\serial\serialwin32.py", line 258, in in_waiting
+    if not win32.ClearCommError(self._port_handle, ctypes.byref(flags), ctypes.byref(comstat)):
+                                                                        ~~~~~~~~~~~~^^^^^^^^^
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "C:\script\listen.py", line 59, in <module>
+    ser = find_active_port()
+  File "C:\script\listen.py", line 45, in find_active_port
+    while time.time() - start_time < 90:
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt

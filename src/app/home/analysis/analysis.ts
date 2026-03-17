@@ -40,14 +40,13 @@ export class Analysis implements OnInit, OnDestroy, AfterViewInit {
   private resizeObserver: ResizeObserver | null = null;
 
   timeScales = [
-    { label: 'Hour', value: 'Hour' },
     { label: 'Day', value: 'Day' },
     { label: 'Week', value: 'Week' },
     { label: 'Month', value: 'Month' },
     { label: 'Year', value: 'Year' }
   ];
 
-  selectedTimeScale: string = 'Hour';
+  selectedTimeScale: string = 'Day';
   selectedDate: Date = new Date();
 
   parameters = [
@@ -121,18 +120,23 @@ export class Analysis implements OnInit, OnDestroy, AfterViewInit {
 
     try {
       const { start, end } = this.getDateRange();
-      const limit = this.selectedTimeScale === 'Hour' ? 3600 : 3000;
+
+      let step = 1;
+      let limit = 5000;
+
+      if (this.selectedTimeScale === 'Day') step = 10;
+      else if (this.selectedTimeScale !== 'Hour') step = 60;
 
       const rawData = this.selectedTimeScale === 'Hour'
         ? await this.api.getLatestHourData()
-        : await this.api.getFilteredWindData(start, end, limit); 
+        : await this.api.getFilteredWindData(start, end, limit, step); 
 
-      // Intelligent Downsampling for performance
+      // Intelligent Downsampling for UI performance
       const maxPoints = 500;
       let processedData = rawData || [];
       if (processedData.length > maxPoints) {
-        const step = Math.ceil(processedData.length / maxPoints);
-        processedData = processedData.filter((_, i) => i % step === 0);
+        const uiStep = Math.ceil(processedData.length / maxPoints);
+        processedData = processedData.filter((_, i) => i % uiStep === 0);
       }
 
       this.analysisData = processedData.map(item => ({
@@ -166,20 +170,31 @@ export class Analysis implements OnInit, OnDestroy, AfterViewInit {
     const m = selected.getMonth();
     const d = selected.getDate();
 
-    let start = new Date(y, m, d, 0, 0, 0, 0);
-    let end = new Date(y, m, d, 23, 59, 59, 999);
+    let start: Date;
+    let end: Date;
 
     if (this.selectedTimeScale === 'Hour') {
       start = new Date(selected.getTime() - (60 * 60 * 1000));
       end = selected;
+    } else if (this.selectedTimeScale === 'Day') {
+      start = new Date(y, m, d, 0, 0, 0, 0);
+      end = new Date(y, m, d, 23, 59, 59, 999);
     } else if (this.selectedTimeScale === 'Week') {
-      end.setDate(start.getDate() + 7);
+      // 7 days starting from the selected date
+      start = new Date(y, m, d, 0, 0, 0, 0);
+      const nextWeek = new Date(start.getTime() + (7 * 24 * 60 * 60 * 1000));
+      end = new Date(nextWeek.getTime() - 1); // End at 23:59:59 of the 7th day
     } else if (this.selectedTimeScale === 'Month') {
-      start.setDate(1);
+      // Whole month of the selected date
+      start = new Date(y, m, 1, 0, 0, 0, 0);
       end = new Date(y, m + 1, 0, 23, 59, 59, 999);
     } else if (this.selectedTimeScale === 'Year') {
+      // Whole year of the selected date
       start = new Date(y, 0, 1, 0, 0, 0, 0);
       end = new Date(y, 11, 31, 23, 59, 59, 999);
+    } else {
+      start = new Date(y, m, d, 0, 0, 0, 0);
+      end = new Date(y, m, d, 23, 59, 59, 999);
     }
 
     return {

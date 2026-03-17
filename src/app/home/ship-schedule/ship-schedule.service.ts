@@ -7,7 +7,7 @@ import { CruiseRoute } from './ship-schedule';
   providedIn: 'root'
 })
 export class ShipScheduleService {
-  private apiUrl = 'http://localhost:3000/api/ship-schedules';
+  private apiUrl = 'https://terra-axis-api.trideltechnologiesindia.com/api/ship-schedules';
 
   constructor(private http: HttpClient) {}
 

@@ -8,15 +8,15 @@
         <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
             <span *ngIf="expandedSideBar"
                 class="font-bold text-lg text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-        <div class="flex items-center gap-3">
-            <div
-                class="w-10 h-10 rounded-xl flex items-center justify-center p-1">
-            <img src="../../assets/tridel.png" alt="Tridel Logo" class="max-w-full max-h-full object-contain">
-            </div>
-            <h2
-                class="text-[16px] font-black text-blue-800 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-cyan-400 dark:to-blue-500 uppercase tracking-widest whitespace-nowrap">
-                TERRA Axis</h2>
-        </div> </span>
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center p-1">
+                        <img src="../../assets/tridel.png" alt="Tridel Logo" class="max-w-full max-h-full object-contain">
+                    </div>
+                    <h2
+                        class="text-[16px] font-black text-blue-800 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-cyan-400 dark:to-blue-500 uppercase tracking-widest whitespace-nowrap">
+                        TERRA AXIS</h2>
+                        </div>
+                        </span>
             <button (click)="onChangeExpandSideBar()"
                 class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors">
                 <i class="fa-solid" [ngClass]="expandedSideBar ? 'fa-chevron-left' : 'fa-chevron-right'"></i>
@@ -57,37 +57,56 @@
         <div
             class="h-16 mx-4 mt-4 flex-shrink-0 rounded-2xl bg-white/80 dark:bg-gradient-to-r dark:from-slate-800/90 dark:to-slate-900/90 backdrop-blur-sm border border-blue-200 dark:border-cyan-500/20 shadow-xl shadow-blue-100/50 dark:shadow-cyan-500/10 px-4 md:px-6 flex items-center justify-between z-20">
             <div class="flex items-center gap-6">
-                <!-- <div class="flex items-center gap-3">
-                    <div
-                        class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-cyan-500/30">
-                        <i class="fa-solid fa-water text-white text-xl"></i>
-                    </div>
-                    <h2
-                        class="text-2xl font-black text-blue-800 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-cyan-400 dark:to-blue-500 uppercase tracking-widest">
-                        Terra Nemo</h2>
-                </div> -->
-        
+                <!-- <div class="flex items-center gap-4"> -->
+                <!-- <div class="flex flex-col">
+                                                                                                                                                                                                                                                                                                                        <div class="flex items-center gap-2">
+                                                                                                                                                                                                                                                                                                                            <span class="text-[8px] font-black text-slate-400 uppercase tracking-wider">IST</span>
+                                                                                                                                                                                                                                                                                                                            <span
+                                                                                                                                                                                                                                                                                                                                class="text-xs font-black text-blue-600 dark:text-cyan-400 font-mono">{{getISTTime()}}</span>
+                                                                                                                                                                                                                                                                                                                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[8px] font-black text-slate-400 uppercase tracking-wider">UTC</span>
+                            <span class="text-xs font-black text-blue-400 dark:text-sky-400 font-mono">{{getUTCTime()}}</span>
+                        </div>
+                        </div> -->
+                <!-- </div> -->
+                <!-- <div class="flex flex-col items-end gap-1">
+                                                                                                                                                                                                                                                                                                                                                    <div class="flex items-center gap-2">
+                                                                                                                                                                                                                                                                                                                                                        <span class="text-[9px] font-black text-blue-600 dark:text-cyan-400 font-mono">{{getISTTime()}}</span>
+                                                                                                                                                                                                                                                                                                                                                        <span
+                                                                                                                                                                                                                                                                                                                                                            class="text-[8px] font-black text-slate-400 uppercase tracking-widest border-l border-slate-300 dark:border-slate-600 pl-2 ml-1">IST</span>
+                                                                                                                                                                                                                                                                                                                                                    </div>
+                                                                                                                                                                                                                                                                                                                                                    <div class="flex items-center gap-2">
+                                                                                                                                                                                                                                                                                                                                                        <span class="text-[9px] font-black text-blue-400 dark:text-sky-400 font-mono">{{getUTCTime()}}</span>
+                                                                                                                                                                                                                                                                                                                                                        <span
+                                                                                                                                                                                                                                                                                                                                                            class="text-[8px] font-black text-slate-400 uppercase tracking-widest border-l border-slate-300 dark:border-slate-600 pl-2 ml-1">UTC</span>
+                                                                                                                                                                                                                                                                                                                                                    </div>
+                                                                                                                                                                                                                                                                                                                                                </div> -->
                 <div class="h-8 w-px bg-blue-200 dark:bg-slate-700"></div>
-        
+
                 <div class="flex items-center gap-8 hidden lg:flex" *ngIf="getWeatherInfo() as weather">
                     <div class="flex items-center gap-3">
                         <i class="fa-solid text-2xl" [ngClass]="[weather.icon, weather.color]"
                             [style.filter]="'drop-shadow(0 0 8px ' + weather.glow + ')'"></i>
                         <div>
-                            <div class="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Current Weather</div>
-                            <div class="text-sm font-bold text-gray-800 dark:text-slate-200">{{weather.condition}}, {{weather.temperature |
+                            <div class="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">
+                                Current Weather</div>
+                            <div class="text-sm font-bold text-gray-800 dark:text-slate-200">{{weather.condition}},
+                                {{weather.temperature |
                                 number:'1.1-1'}}{{weather.tempUnit}}</div>
+                        </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-battery-three-quarters text-2xl drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+                                [ngClass]="(anemometerData.battery || 0) > 20 ? 'text-emerald-500' : 'text-rose-500'"></i>
+                            <div>
+                            <div class="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">
+                                Battery Unit</div>
+                            <div class="text-sm font-bold text-gray-800 dark:text-slate-200">{{(anemometerData.battery
+                                || 0) |
+                                number:'1.2-2'}}{{sensorConfigs[8]?.unit
+                                || '%'}}</div>
                             </div>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <i class="fa-solid fa-battery-three-quarters text-2xl drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]"
-                                    [ngClass]="(anemometerData.battery || 0) > 20 ? 'text-emerald-500' : 'text-rose-500'"></i>
-                                <div>
-                                    <div class="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Battery Unit</div>
-                                    <div class="text-sm font-bold text-gray-800 dark:text-slate-200">{{(anemometerData.battery || 0) |
-                                        number:'1.2-2'}}{{sensorConfigs[8]?.unit
-                                        || '%'}}</div>
-                                </div>
                             </div>
                 </div>
             </div>
@@ -97,16 +116,25 @@
                     <p-select [options]="stations" [(ngModel)]="selectedStation" optionLabel="label" optionValue="value"
                         placeholder="SELECT STATION" class="premium-header-select" appendTo="body"></p-select>
                 </div>
-                <div
-                    class="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl border transition-all duration-500"
+                <div class="flex flex-col items-end gap-1">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[9px] font-black text-blue-600 dark:text-cyan-400 font-mono">{{getISTTime()}}</span>
+                        <span
+                            class="text-[8px] font-black text-slate-400 uppercase tracking-widest border-l border-slate-300 dark:border-slate-600 pl-2 ml-1">IST</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[9px] font-black text-blue-400 dark:text-sky-400 font-mono">{{getUTCTime()}}</span>
+                        <span
+                            class="text-[8px] font-black text-slate-400 uppercase tracking-widest border-l border-slate-300 dark:border-slate-600 pl-2 ml-1">UTC</span>
+                    </div>
+                </div>
+                <div class="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl border transition-all duration-500"
                     [ngClass]="{
                         'bg-green-100 dark:bg-emerald-500/10 border-green-300 dark:border-emerald-400/30': systemStatus === 'online',
                         'bg-amber-100 dark:bg-amber-500/10 border-amber-300 dark:border-amber-400/30': systemStatus === 'partial',
                         'bg-rose-100 dark:bg-rose-500/10 border-rose-300 dark:border-rose-400/30': systemStatus === 'offline' || systemStatus === undefined
                     }">
-                    <div
-                        class="w-2.5 h-2.5 rounded-full animate-pulse shadow-lg"
-                        [ngClass]="{
+                    <div class="w-2.5 h-2.5 rounded-full animate-pulse shadow-lg" [ngClass]="{
                             'bg-green-500 dark:bg-emerald-400 shadow-green-400/50 dark:shadow-emerald-400/70': systemStatus === 'online',
                             'bg-amber-500 shadow-amber-400/50': systemStatus === 'partial',
                             'bg-rose-500 shadow-rose-400/50': systemStatus === 'offline' || systemStatus === undefined
@@ -138,17 +166,17 @@
 
             <!-- Home Dashboard / Anemometer -->
             <app-dashboard *ngIf="activeTab === 'dashboard'" [anemometerData]="anemometerData"
-                [selectedStation]="selectedStation" [widgetData]="widgetData" [fullDayTrends]="fullDayTrends" [isDarkMode]="isDarkMode"
-                [lastDataTimestamp]="lastDataTimestamp"></app-dashboard>
+                [selectedStation]="selectedStation" [widgetData]="widgetData" [fullDayTrends]="fullDayTrends"
+                [isDarkMode]="isDarkMode" [lastDataTimestamp]="lastDataTimestamp"></app-dashboard>
 
 
             <!-- Report Page -->
             <app-report *ngIf="activeTab === 'report'" [initialUnits]="initialUnits" [sensorConfigs]="sensorConfigs"></app-report>
 
             <!-- Analysis Page -->
-            <app-analysis *ngIf="activeTab === 'analysis'" [reportData]="reportData"
-                [anemometerData]="anemometerData" [initialUnits]="initialUnits" [sensorConfigs]="sensorConfigs"
-                [stations]="stations" [selectedStation]="selectedStation"></app-analysis>
+            <app-analysis *ngIf="activeTab === 'analysis'" [reportData]="reportData" [anemometerData]="anemometerData"
+                [initialUnits]="initialUnits" [sensorConfigs]="sensorConfigs" [stations]="stations"
+                [selectedStation]="selectedStation"></app-analysis>
 
             <!-- User Management Page -->
             <app-users *ngIf="activeTab === 'users'" [isDarkMode]="isDarkMode"></app-users>
@@ -163,19 +191,24 @@
             <!-- Profile Page -->
             <app-profile *ngIf="activeTab === 'profile'" [currentUser]="currentUser"></app-profile>
 
-
         </div>
-<div class="flex-1 flex items-center justify-center" *ngIf="!isInitialized">
-    <div class="flex flex-col items-center gap-4">
-        <i class="fa-solid fa-circle-notch fa-spin text-4xl text-blue-500"></i>
-        <span class="text-xs font-black text-slate-400 uppercase tracking-widest">Initializing System...</span>
+        <div class="flex-1 flex items-center justify-center" *ngIf="!isInitialized">
+            <div class="flex flex-col items-center gap-4">
+                <i class="fa-solid fa-circle-notch fa-spin text-4xl text-blue-500"></i>
+                <span class="text-xs font-black text-slate-400 uppercase tracking-widest">Initializing System...</span>
+            </div>
+        </div>
+        </div>
+    <!-- Global Copyright Overlay - Fixed at root -->
+    <div
+        class="absolute bottom-2 right-5 text-[10px] dark:text-white text-black   uppercase tracking-widest z-[9999] pointer-events-none select-none">
+        &copy; {{currentYear}} Tridel Technologies. Authorized Access Only.
     </div>
 </div>
-</div>
-</div>
+
 <!-- Initial Units Setup Dialog -->
-<p-dialog [(visible)]="showInitialUnitsDialog" [modal]="true" [closable]="false" [draggable]="false" [resizable]="false"
-    header="System Initialization: Source Units" [style]="{width: '50vw', minWidth: '400px'}"
+<p-dialog [(visible)]="showInitialUnitsDialog" [modal]="true" [closable]="isManualUnitEdit" [draggable]="false"
+    [resizable]="false" header="System Initialization: Source Units" [style]="{width: '50vw', minWidth: '400px'}"
     styleClass="initial-setup-dialog">
     <div class="flex flex-col gap-6 p-4">
         <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2 italic text-center">Define
@@ -221,5 +254,5 @@
                 [disabled]="!shipName.trim()"
                 styleClass="p-button-primary w-full shadow-lg shadow-blue-500/20"></p-button>
         </div>
-        </div>
+    </div>
 </p-dialog>

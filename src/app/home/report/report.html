@@ -19,7 +19,7 @@
                 <!-- Time Scale Selector -->
                 <div class="flex flex-col gap-1">
                     <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Time Scale</label>
-                    <p-selectbutton [options]="timeScales" [(ngModel)]="selectedTimeScale" (onChange)="fetchData()"
+                    <p-selectbutton [options]="timeScales" [(ngModel)]="selectedTimeScale" (onChange)="onTimeScaleChange()"
                         [styleClass]="'premium-select-button'"></p-selectbutton>
                     </div>
                 <!-- Date Picker -->
@@ -47,19 +47,19 @@
             <!-- Export Actions -->
             <div class="flex items-center gap-3">
                 <button (click)="exportExcel()"
-                    class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm group"
-                    title="Export Excel">
-                    <i class="fa-solid fa-file-excel text-green-600 text-lg group-hover:scale-110 transition-transform"></i>
+                    class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-[11px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-500/20 active:scale-95">
+                    <i class="fa-solid fa-file-excel"></i>
+                    <span>Excel</span>
                 </button>
                 <button (click)="exportPDF()"
-                    class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm group"
-                    title="Export PDF">
-                    <i class="fa-solid fa-file-pdf text-red-500 text-lg group-hover:scale-110 transition-transform"></i>
+                    class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-600 text-white text-[11px] font-black uppercase tracking-widest hover:bg-rose-700 transition-all shadow-lg shadow-rose-500/20 active:scale-95">
+                    <i class="fa-solid fa-file-pdf"></i>
+                    <span>PDF</span>
                 </button>
                 <button (click)="exportCSV()"
-                    class="flex items-center gap-3 px-6 py-3 rounded-xl bg-blue-600 text-white text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 active:scale-95">
+                    class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white text-[11px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 active:scale-95">
                     <i class="fa-solid fa-download"></i>
-                    <span>Export CSV</span>
+                    <span>CSV</span>
                 </button>
             </div>
         </div>
@@ -145,8 +145,15 @@
             </div>
 
             <div class="flex items-center gap-2">
+                <button (click)="firstPage()" [disabled]="currentPage === 1"
+                    class="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    title="First Page">
+                    <i class="fa-solid fa-angles-left text-xs"></i>
+                </button>
+
                 <button (click)="prevPage()" [disabled]="currentPage === 1"
-                    class="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+                    class="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    title="Previous Page">
                     <i class="fa-solid fa-chevron-left text-xs"></i>
                 </button>
 
@@ -161,9 +168,15 @@
                 </div>
 
                 <button (click)="nextPage()" [disabled]="currentPage === totalPages"
-                    class="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+                    class="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    title="Next Page">
                     <i class="fa-solid fa-chevron-right text-xs"></i>
                 </button>
+<button (click)="lastPage()" [disabled]="currentPage === totalPages"
+    class="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+    title="Last Page">
+    <i class="fa-solid fa-angles-right text-xs"></i>
+</button>
             </div>
         </div>
     </div>

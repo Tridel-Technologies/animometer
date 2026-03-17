@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { MapComponent } from '../../map/map';
@@ -46,8 +46,9 @@ export class ShipSchedule implements OnInit {
   routeCoordinates: [number, number][] = [];
   
   statusFilter: string = 'All'; // Filter state
+  searchText: string = '';
 
-  constructor(private fb: FormBuilder) {}
+  constructor(private fb: FormBuilder, private cdr: ChangeDetectorRef) { }
 
   ngOnInit(): void {
     this.initForm();
@@ -55,16 +56,30 @@ export class ShipSchedule implements OnInit {
   }
 
   getFilteredCruises(): CruiseRoute[] {
-    if (this.statusFilter === 'All') {
-      return this.savedCruises;
+    let filtered = this.savedCruises;
+
+    if (this.statusFilter !== 'All') {
+      filtered = filtered.filter(c => c.status === this.statusFilter);
     }
-    return this.savedCruises.filter(c => c.status === this.statusFilter);
+
+    if (this.searchText) {
+      const search = this.searchText.toLowerCase();
+      filtered = filtered.filter(c =>
+        c.id.toLowerCase().includes(search) ||
+        c.vessel.toLowerCase().includes(search) ||
+        c.project.toLowerCase().includes(search) ||
+        c.studyArea.toLowerCase().includes(search)
+      );
+    }
+
+    return filtered;
   }
 
   loadCruises(): void {
     this.scheduleService.getCruises().subscribe({
       next: (data) => {
         this.savedCruises = data;
+        this.cdr.markForCheck();
       },
       error: (err) => console.error('Failed to load cruises', err)
     });

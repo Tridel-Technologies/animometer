@@ -27,7 +27,7 @@ export interface WindData {
   providedIn: 'root',
 })
 export class ApiService {
-  baseUrl: string = 'http://localhost:3000/api';
+  baseUrl: string = 'https://terra-axis-api.trideltechnologiesindia.com/api';
 
   constructor(private http:HttpClient) {}
 

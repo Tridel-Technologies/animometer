@@ -7,7 +7,7 @@ import { Observable } from 'rxjs';
 })
 export class SocketService {
   private socket: Socket;
-  private readonly url: string = 'http://localhost:3000'; // Match backend port
+  private readonly url: string = 'https://terra-axis-api.trideltechnologiesindia.com'; // Match backend port
 
   constructor() {
     this.socket = io(this.url);
