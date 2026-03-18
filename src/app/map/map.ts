@@ -3,6 +3,7 @@ import { isPlatformBrowser, CommonModule } from '@angular/common';
 import { PLATFORM_ID } from '@angular/core';
 import mapboxgl, { Marker } from 'mapbox-gl';
 import { Homeservice } from '../home/homeService/homeservice';
+import { RouteService } from './route.service';
 
 @Component({
   selector: 'app-map', 
@@ -18,7 +19,7 @@ export class MapComponent implements OnInit, OnDestroy, OnChanges {
   @Input() scheduleStartDate: string = '';
   @Input() currentDatetime: string = '';
 
-  constructor( private station:Homeservice){}
+  constructor(private station: Homeservice, private routeService: RouteService) {}
 
   @ViewChild('mapContainer', { static: true }) mapContainer!: ElementRef;
   map: any;
@@ -275,13 +276,32 @@ export class MapComponent implements OnInit, OnDestroy, OnChanges {
         });
       }
 
-      // Always ensure the track line exists or is updated
-      this.addTrackPath(this.routeCoordinates, 'track-source', 'track-line', 'red', true);
+      // Build a sea-routed path (avoids land) for the planned route line
+      this.buildSeaRoute(this.routeCoordinates).then(seaPath => {
+        this.addTrackPath(seaPath, 'track-source', 'track-line', 'red', true);
+      });
     }
 
     if (hasActual && this.actualPath.length > 1) {
       this.addTrackPath(this.actualPath, 'actual-source', 'actual-line', '#10b981', false);
     }
+  }
+
+  /** Build a land-avoiding sea route for the full planned route by stitching legs. */
+  async buildSeaRoute(waypoints: [number, number][]): Promise<[number, number][]> {
+    if (!waypoints || waypoints.length < 2) return waypoints ?? [];
+
+    const fullPath: [number, number][] = [];
+    for (let i = 0; i < waypoints.length - 1; i++) {
+      const leg = await this.routeService.getSeaRoute(waypoints[i], waypoints[i + 1]);
+      if (i === 0) {
+        fullPath.push(...leg);
+      } else {
+        // Skip the first point of each subsequent leg (it's the same as the last point of the previous leg)
+        fullPath.push(...leg.slice(1));
+      }
+    }
+    return fullPath;
   }
 
   toggleAnimation() {
